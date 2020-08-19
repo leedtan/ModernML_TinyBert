@@ -1,3 +1,4 @@
 tf-nightly
 tf-models-official
-ipykernal
+jupyterlab
+pydot
