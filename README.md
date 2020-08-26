@@ -5,30 +5,12 @@ https://www.tensorflow.org/official_models/fine_tuning_bert
 ## Getting Started
 
 ### Virtual Environment
-Create a python virtual environment
-
-#### Initializing
-```
-python -m venv venv
-```
-
-#### Reinitializing
-```
-source venv/bin/activate
-```
-
-### GraphViz
-```
-brew install graphviz
-```
-
-## Extra Files (Unused)
- - `download_wiki_dump.sh`
- - `extract_and_clean_wiki_dump.sh`
- - `run.sh`
- - `prepare_data_ipynb`
-Run cells in prepare_data.ipynb to download and process dataset. 
+(Go to pytorch.org to install pytorch. Change below to fit your OS and Cuda toolkit)
+conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
 
 
-## Running
-Currently, the active file is `tf_models.ipynb`
+pip install transformers
+pip install pytorch_transformers
+
+Progress tracker/planner:
+https://docs.google.com/document/d/1QfFiPy4BghEuPFEXxaSJu9XPK5MjoUBSgMuWI_wVHoM/edit?usp=sharing
