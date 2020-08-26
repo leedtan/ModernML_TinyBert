@@ -1,4 +1,0 @@
-tf-nightly
-tf-models-official
-jupyterlab
-pydot
