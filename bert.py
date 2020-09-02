@@ -14,7 +14,7 @@ import numpy as np
 
 # local
 from dataset import CustomDataset
-
+from pretrained_model import PretrainedModel
 
 def build_sentence_list(start_token, sentences):
 	text = [start_token]
@@ -26,37 +26,6 @@ def build_sentence_list(start_token, sentences):
 sample_dataset = CustomDataset('sample10000.txt')
 
 dataloader = DataLoader(sample_dataset, batch_size = 2, num_workers = 0)
-
-class MaskLMDataset:
-	def __init__(self, dataset, dataloader):
-		self.dataset = dataset
-		self.dataloader = dataloader
-
-
-class PretrainedModel(nn.Module):
-	def __init__(self):
-		super(PretrainedModel, self).__init__()
-		self.model = BertModel.from_pretrained(
-			'bert-base-uncased',
-			output_hidden_states=True,
-			output_attentions=True
-		)
-		self.model.eval()
-		self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-
-	def forward(self, text = None, tokenized_text = None, attention_mask = None):
-		if text is not None:
-			tokenized_text = torch.tensor([self.tokenizer.encode(text, add_special_tokens=True)])
-		if attention_mask is None:
-			attention_mask = torch.tensor([[1]*len(tokenized_text)])
-		all_hidden_states, all_attentions = self.model(tokenized_text, attention_mask = attention_mask)[-2:]
-		return all_hidden_states
-		
-if 1:
-	model = PretrainedModel()
-	hidden_states = model("Here is some text to encode")
-
-	len(hidden_states)
 
 class TinyBert(nn.Module):
 	def __init__(self):
