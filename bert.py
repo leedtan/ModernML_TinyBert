@@ -15,8 +15,6 @@ import numpy as np
 # local
 from dataset import CustomDataset
 
-CUDA_ENABLED  = 0
-
 
 def build_sentence_list(start_token, sentences):
 	text = [start_token]
