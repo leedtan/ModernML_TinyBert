@@ -94,10 +94,12 @@ class Model(nn.Module):
 			mask[mask_idx + 1] = 0
 			self.y.append(sentence[mask_idx + 1])
 			sentence[mask_idx + 1] = '[MASK]'
-		attention_mask = torch.tensor(pad_sequences(masks, padding='post'))
-		tokenized_text = torch.tensor(pad_sequences([
-			self.tokenizer.convert_tokens_to_ids(sentence) for sentence in sentences
-		]).tolist())
+		print(tokenized_text.shape)
+		pretrained_hidden = self.pretrained_model(
+			tokenized_text = tokenized_text, attention_mask = attention_mask)
+		
+		return pretrained_hidden
+		
 	mdl = Model()
 
 	pretrained_hidden = mdl(['hi there', 'how are you'])
