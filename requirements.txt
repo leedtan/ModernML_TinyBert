@@ -1,0 +1,6 @@
+torch
+transformers
+wikiextractor
+tensorflow
+matplotlib
+pytest
