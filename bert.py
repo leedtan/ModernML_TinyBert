@@ -50,10 +50,13 @@ class Model(nn.Module):
 			return self.forward_maskLM(text)
 		else:
 			raise ValueError('wtf is this text?' + text + type(text[0]))
+
 	def forward_maskLM(self, text):
 		self.y = []
-		sentences = [build_sentence_list(
-			'CLS', [self.tokenizer.tokenize(line)]) for line in text]
+		sentences = [
+			build_sentence_list('CLS', [self.tokenizer.tokenize(line)]) 
+			for line in text
+		]
 		
 		lengths = [len(sentence) - 2 for sentence in sentences]
 		mask_idxes = [np.random.randint(0, length) for length in lengths]
@@ -69,7 +72,6 @@ class Model(nn.Module):
 				[self.tokenizer.convert_tokens_to_ids(sentence) for sentence in sentences]
 			).tolist()
 		)
-		print(tokenized_text.shape)
 		pretrained_hidden = self.pretrained_model(
 			tokenized_text = tokenized_text, attention_mask = attention_mask)
 		
