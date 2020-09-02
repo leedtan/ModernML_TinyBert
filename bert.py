@@ -100,6 +100,8 @@ class Model(nn.Module):
 		
 		return pretrained_hidden
 		
+
+if 1:
 	mdl = Model()
 
 	pretrained_hidden = mdl(['hi there', 'how are you'])
