@@ -138,12 +138,13 @@ class Model(nn.Module):
 		return pretrained_hidden
 		
 
-mdl = Model()
+if 1:
+	mdl = Model()
 
-pretrained_hidden = mdl(['hi there', 'how are you'])
+	pretrained_hidden = mdl(['hi there', 'how are you'])
 
-print(len(pretrained_hidden))
-print(pretrained_hidden[4].shape)
+	print(len(pretrained_hidden))
+	print(pretrained_hidden[4].shape)
 
-import matplotlib.pyplot as plt
-plt.hist(pretrained_hidden[0].reshape(-1).detach().numpy(), bins = 100)
+	import matplotlib.pyplot as plt
+	plt.hist(pretrained_hidden[0].reshape(-1).detach().numpy(), bins = 100)
