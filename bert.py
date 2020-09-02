@@ -86,7 +86,7 @@ class PretrainedModel(nn.Module):
 		all_hidden_states, all_attentions = self.model(tokenized_text, attention_mask = attention_mask)[-2:]
 		return all_hidden_states
 		
-if 0:
+if 1:
 	model = PretrainedModel()
 	hidden_states = model("Here is some text to encode")
 
