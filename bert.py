@@ -137,12 +137,6 @@ class Model(nn.Module):
 		
 		return pretrained_hidden
 		
-class attention:
-	def __init__(self):
-		
-
-
-
 
 mdl = Model()
 
