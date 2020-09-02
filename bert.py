@@ -1,3 +1,4 @@
+# global
 import torch
 from torch import nn
 from torch.utils.data import Dataset
@@ -10,6 +11,9 @@ from transformers import BertModel, BertTokenizer
 
 from itertools import islice
 import numpy as np
+
+# local
+from dataset import CustomDataset
 
 CUDA_ENABLED  = 0
 
@@ -25,47 +29,15 @@ def build_sentence_list(start_token, sentences):
 	return text
 
 
-class CustomDataset(Dataset):
-	def __init__(self, filename, num_bunches = 100):
-		self.num_bunches = num_bunches
-		self.num_lines = 114180969
-		self.bunch_width = self.num_lines // num_bunches
-		self.filename = filename
-		self.set_bunch(0)
+sample_dataset = CustomDataset('sample10000.txt')
 
-	def set_bunch(self, bunch_idx):
-		start = bunch_idx * self.bunch_width
-		end = (bunch_idx + 1) * self.bunch_width
-		with open(self.filename, encoding='iso-8859-1') as f:
-			lines = [line[:-1] for line in islice(f, start, end)]
-		self.X = lines
-	
-	def preprocess(self, text):
-		return text
-
-	def __len__(self):
-		return len(self.X)
-	def __getitem__(self, index):
-		return self.X[index]
-
-
-if 0:
-	dataset = CustomDataset('sample100000.txt')
-
-	#Wrap it around a dataloader
-	dataloader = DataLoader(dataset, batch_size = 2, num_workers = 0)
+dataloader = DataLoader(sample_dataset, batch_size = 2, num_workers = 0)
 
 class MaskLMDataset:
 	def __init__(self, dataset, dataloader):
 		self.dataset = dataset
 		self.dataloader = dataloader
-if 0:
-	itr = 0
-	for text, lengths_and_masks in dataloader:
-		print(len(text))
-		itr += 1
-		if itr > 2:
-			break
+
 
 class PretrainedModel(nn.Module):
 	def __init__(self):
