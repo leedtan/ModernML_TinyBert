@@ -17,10 +17,6 @@ from dataset import CustomDataset
 
 CUDA_ENABLED  = 0
 
-def to_cuda(tensor):
-	if CUDA_ENABLED:
-		tensor = tensor.cuda()
-	return tensor
 
 def build_sentence_list(start_token, sentences):
 	text = [start_token]
@@ -42,19 +38,19 @@ class MaskLMDataset:
 class PretrainedModel(nn.Module):
 	def __init__(self):
 		super(PretrainedModel, self).__init__()
-		self.model = to_cuda(BertModel.from_pretrained(
+		self.model = BertModel.from_pretrained(
 			'bert-base-uncased',
 			output_hidden_states=True,
 			output_attentions=True
-		))
+		)
 		self.model.eval()
 		self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
 	def forward(self, text = None, tokenized_text = None, attention_mask = None):
 		if text is not None:
-			tokenized_text = to_cuda(torch.tensor([self.tokenizer.encode(text, add_special_tokens=True)]))
+			tokenized_text = torch.tensor([self.tokenizer.encode(text, add_special_tokens=True)])
 		if attention_mask is None:
-			attention_mask = to_cuda(torch.tensor([[1]*len(tokenized_text)]))
+			attention_mask = torch.tensor([[1]*len(tokenized_text)])
 		all_hidden_states, all_attentions = self.model(tokenized_text, attention_mask = attention_mask)[-2:]
 		return all_hidden_states
 		
@@ -100,23 +96,13 @@ class Model(nn.Module):
 			mask[mask_idx + 1] = 0
 			self.y.append(sentence[mask_idx + 1])
 			sentence[mask_idx + 1] = '[MASK]'
-		attention_mask = to_cuda(torch.tensor(pad_sequences(masks, padding='post')))
-		tokenized_text = to_cuda(torch.tensor(pad_sequences([
-			self.tokenizer.convert_tokens_to_ids(sentence) for sentence in sentences]).tolist()))
-		print(tokenized_text.shape)
-		pretrained_hidden = self.pretrained_model(
-			tokenized_text = tokenized_text, attention_mask = attention_mask)
-		
-		return pretrained_hidden
-		
-
-if 1:
+		attention_mask = torch.tensor(pad_sequences(masks, padding='post'))
+		tokenized_text = torch.tensor(pad_sequences([
+			self.tokenizer.convert_tokens_to_ids(sentence) for sentence in sentences
+		]).tolist())
 	mdl = Model()
 
 	pretrained_hidden = mdl(['hi there', 'how are you'])
 
 	print(len(pretrained_hidden))
 	print(pretrained_hidden[4].shape)
-
-	import matplotlib.pyplot as plt
-	plt.hist(pretrained_hidden[0].reshape(-1).detach().numpy(), bins = 100)
