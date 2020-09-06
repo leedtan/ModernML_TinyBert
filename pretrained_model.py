@@ -17,4 +17,4 @@ class PretrainedModel(nn.Module):
         if attention_mask is None:
             attention_mask = to_cuda(torch.tensor([[1]*len(tokenized_text)]))
         all_hidden_states, all_attentions = self.model(tokenized_text, attention_mask = attention_mask)[-2:]
-        return all_hidden_states
+        return all_hidden_states, all_attentions
