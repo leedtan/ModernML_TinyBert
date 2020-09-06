@@ -6,7 +6,7 @@ from torch import Tensor
 from torch import functional as F
 from torch.nn.functional import leaky_relu
 from torch.nn.modules.module import Module
-from torch.nn.modules.activation import MultiheadAttention
+from MultiheadAttention import MultiheadAttention
 from torch.nn.modules.container import ModuleList
 from torch.nn.init import xavier_uniform_
 from torch.nn.modules.dropout import Dropout
@@ -72,7 +72,7 @@ class Transformer(Module):
             positions. If a ByteTensor is provided, the non-zero positions are not allowed to attend
             while the zero positions will be unchanged. If a BoolTensor is provided, positions with ``True``
             are not allowed to attend while ``False`` values will be unchanged. If a FloatTensor
-            is provided, it will be added to the attention weight. 
+            is provided, it will be added to the attention weight.
             [src/memory]_key_padding_mask provides specified elements in the key to be ignored by
             the attention. If a ByteTensor is provided, the non-zero positions will be ignored while the zero
             positions will be unchanged. If a BoolTensor is provided, the positions with the
@@ -90,8 +90,8 @@ class Transformer(Module):
         if src.size(2) != self.d_model:
             raise RuntimeError("the feature number of src and tgt must be equal to d_model")
 
-        memory = self.encoder(src, mask=src_mask, src_key_padding_mask=src_key_padding_mask)
-        return memory
+        memory, attns = self.encoder(src, mask=src_mask, src_key_padding_mask=src_key_padding_mask)
+        return memory, attns
 
     def generate_square_subsequent_mask(self, sz: int) -> Tensor:
         r"""Generate a square mask for the sequence. The masked positions are filled with float('-inf').
@@ -142,15 +142,19 @@ class TransformerEncoder(Module):
         Shape:
             see the docs in Transformer class.
         """
+        outputs = []
+        attns = []
         output = src
 
         for mod in self.layers:
-            output = mod(output, src_mask=mask, src_key_padding_mask=src_key_padding_mask)
+            output, attn = mod(output, src_mask=mask, src_key_padding_mask=src_key_padding_mask)
+            outputs.append(output)
+            attns.append(attn)
 
         if self.norm is not None:
             output = self.norm(output)
 
-        return output
+        return outputs, attns
 
 
 class TransformerEncoderLayer(Module):
@@ -205,14 +209,14 @@ class TransformerEncoderLayer(Module):
         Shape:
             see the docs in Transformer class.
         """
-        src2 = self.self_attn(src, src, src, attn_mask=src_mask,
-                              key_padding_mask=src_key_padding_mask)[0]
+        src2, attn = self.self_attn(src, src, src, attn_mask=src_mask,
+                              key_padding_mask=src_key_padding_mask)
         src = src + self.dropout1(src2)
         src = self.norm1(src)
         src2 = self.linear2(self.dropout(self.activation(self.linear1(src))))
         src = src + self.dropout2(src2)
         src = self.norm2(src)
-        return src
+        return src, attn
 
 def _get_clones(module, N):
     return ModuleList([copy.deepcopy(module) for i in range(N)])
