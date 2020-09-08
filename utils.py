@@ -3,7 +3,7 @@ import copy
 
 import torch
 from torch import nn
-from transformers import BertModel, BertTokenizer
+from transformers import BertModel, BertTokenizer, BertForMaskedLM
 CUDA_ENABLED  = 0
 from torch.utils.data import Dataset
 from itertools import islice
