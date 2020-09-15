@@ -1,3 +1,7 @@
 {
-	"python.pythonPath": "venv/bin/python3"
+	"python.pythonPath": "C:\\Users\\Mos2\\Anaconda3\\python.exe",
+	"python.linting.enabled": true,
+	"python.linting.pylintEnabled": false,
+	"python.linting.pycodestyleEnabled": true,
+	"python.dataScience.jupyterServerURI": "local"
 }

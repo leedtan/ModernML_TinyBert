@@ -1,14 +1,16 @@
-import pdb
-import copy
+# import pdb
+# import copy
 
-import torch
-from torch import nn
-from transformers import BertModel, BertTokenizer, BertForMaskedLM
-CUDA_ENABLED  = 0
-from torch.utils.data import Dataset
-from itertools import islice
-from torch.utils.data import DataLoader
-import numpy as np
+# import torch
+# from torch import nn
+# from transformers import BertModel, BertTokenizer, BertForMaskedLM
+CUDA_ENABLED  =torch.cuda.is_available()
+
+
+# from torch.utils.data import Dataset
+# from itertools import islice
+# from torch.utils.data import DataLoader
+# import numpy as np
 
 def to_cuda(tensor):
     if CUDA_ENABLED:

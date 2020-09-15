@@ -1,5 +1,5 @@
 from utils import *
-class PretrainedModel(nn.Module):
+class PretrainedModel(nn.Module):  # We could delete this and just use to_cuda of Bert whatever. We don't need the class. Just use BERT model
     def __init__(self):
         super(PretrainedModel, self).__init__()
         self.model = to_cuda(BertForMaskedLM.from_pretrained(

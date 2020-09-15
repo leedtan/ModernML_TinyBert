@@ -1,11 +1,14 @@
 
 from utils import *
+from torch.utils.data import DataLoader, Dataset
+from itertools import islice
 
-    
+
 class CustomDataset(Dataset):
     def __init__(self, filename, num_bunches = 100):
         self.num_bunches = num_bunches
-        self.num_lines = 114180969
+        self.num_lines = 114180969 #Let's calculate this instead, can do it without loading into memory. If you calculate it you store # 
+        #lines in a file and before you calc you check if the file is named. Cache it. 
         self.bunch_width = self.num_lines // num_bunches
         self.filename = filename
         self.set_bunch(0)
@@ -22,9 +25,8 @@ class CustomDataset(Dataset):
     def __getitem__(self, index):
         return self.X[index]
 
-        
+
 class MaskLMDataset:
     def __init__(self, dataset, dataloader):
         self.dataset = dataset
         self.dataloader = dataloader
-        
