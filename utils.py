@@ -4,7 +4,9 @@
 # import torch
 # from torch import nn
 # from transformers import BertModel, BertTokenizer, BertForMaskedLM
-CUDA_ENABLED  =torch.cuda.is_available()
+import torch
+
+CUDA_ENABLED  = torch.cuda.is_available()
 
 
 # from torch.utils.data import Dataset
