@@ -1,8 +1,8 @@
 # coding=utf-8
-# This file has been modified by ASAPP. The original file is licensed under the 
+# This file has been modified by ASAPP. The original file is licensed under the
 # Apache License Version 2.0.  The modifications by ASAPP are licensed under
 # the MIT license.
-# 
+#
 # Copyright 2018 The Google AI Language Team Authors and The HuggingFace Inc. team.
 # Copyright (c) 2018, NVIDIA CORPORATION.  All rights reserved.
 #
@@ -19,7 +19,7 @@
 # limitations under the License.
 """ Finetuning the library models for sequence classification on GLUE (Bert, XLM, XLNet, RoBERTa, Albert, XLM-RoBERTa)."""
 
-
+import copy
 import argparse
 import glob
 import json
@@ -255,8 +255,7 @@ def train(args, train_dataset, model, tokenizer):
         epochs_trained, int(args.num_train_epochs), desc="Epoch", disable=args.local_rank not in [-1, 0],
     )
     set_seed(args.seed)  # Added here for reproductibility
-    import pdb
-    pdb.set_trace()
+
     pretrained_model = copy.deepcopy(model)
     pretrained_model.eval()
     for _ in train_iterator:
@@ -287,10 +286,28 @@ def train(args, train_dataset, model, tokenizer):
             if args.gradient_accumulation_steps > 1:
                 loss = loss / args.gradient_accumulation_steps
 
+            l2_reg = 0
+
+            import pdb
+            print(len([x for x in model.parameters()]))
+            print(len([x for x in pretrained_model.parameters()]))
+
+            # [torch.flatten(t)[0].detach().numpy() for t in pretrained_model.parameters()][:5]
+            # [torch.flatten(t)[0].detach().numpy() for t in model.parameters()][:5]
+            for finetune, pretrain in zip(model.parameters(), pretrained_model.parameters()):
+                diff = finetune - pretrain
+                diff_squared = diff**2
+                sum_diff = diff_squared.sum()
+                l2_reg += sum_diff
+
+            print(loss, l2_reg)
+            loss += l2_reg * 0.0001
+
             if args.fp16:
                 with amp.scale_loss(loss, optimizer) as scaled_loss:
                     scaled_loss.backward()
             else:
+                pdb.set_trace()
                 loss.backward()
 
             tr_loss += loss.item()
@@ -305,6 +322,7 @@ def train(args, train_dataset, model, tokenizer):
                 else:
                     torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
 
+                pdb.set_trace()
                 optimizer.step()
                 scheduler.step()  # Update learning rate schedule
                 model.zero_grad()
