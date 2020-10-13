@@ -289,8 +289,8 @@ def train(args, train_dataset, model, tokenizer):
             l2_reg = 0
 
             import pdb
-            print(len([x for x in model.parameters()]))
-            print(len([x for x in pretrained_model.parameters()]))
+            # print(len([x for x in model.parameters()]))
+            # print(len([x for x in pretrained_model.parameters()]))
 
             # [torch.flatten(t)[0].detach().numpy() for t in pretrained_model.parameters()][:5]
             # [torch.flatten(t)[0].detach().numpy() for t in model.parameters()][:5]
@@ -307,7 +307,8 @@ def train(args, train_dataset, model, tokenizer):
                 with amp.scale_loss(loss, optimizer) as scaled_loss:
                     scaled_loss.backward()
             else:
-                pdb.set_trace()
+                if step > 9:
+                    pdb.set_trace()
                 loss.backward()
 
             tr_loss += loss.item()
@@ -322,7 +323,7 @@ def train(args, train_dataset, model, tokenizer):
                 else:
                     torch.nn.utils.clip_grad_norm_(model.parameters(), args.max_grad_norm)
 
-                pdb.set_trace()
+
                 optimizer.step()
                 scheduler.step()  # Update learning rate schedule
                 model.zero_grad()
@@ -576,7 +577,7 @@ def load_and_cache_examples(args, task, tokenizer, evaluate=False):
         assert (args.downsample_trainset + args.resplit_val) <= len(features)
 
     if args.downsample_trainset > 0 or args.resplit_val > 0:
-        set_seed(0)  # use the same seed for downsample
+        set_seed(args.seed)  # use the same seed for downsample
         if output_mode == "classification":
             label_to_idx = defaultdict(list)
             for i, f in enumerate(features):
@@ -620,10 +621,7 @@ def load_and_cache_examples(args, task, tokenizer, evaluate=False):
     return dataset
 
 
-def main():
-    parser = get_parser()
-    args = parser.parse_args()
-
+def main(args):
     if (
         os.path.exists(args.output_dir)
         and os.listdir(args.output_dir)
@@ -850,4 +848,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = get_parser()
+    args = parser.parse_args()
+    main(args)
