@@ -159,13 +159,13 @@ def train(args, train_dataset, model, tokenizer):
     else:
         t_total = len(train_dataloader) // args.gradient_accumulation_steps * args.num_train_epochs
 
-    assert args.logging_steps == 0 or args.num_loggings == 0, "Can only use 1 logging option"
+    # assert args.logging_steps == 0 or args.num_loggings == 0, "Can only use 1 logging option"
     if args.logging_steps == 0:
         assert args.num_loggings > 0
         args.logging_steps = t_total // args.num_loggings
 
     if args.warmup_ratio > 0:
-        assert args.warmup_steps == 0
+        # assert args.warmup_steps == 0
         args.warmup_steps = int(args.warmup_ratio * t_total)
 
     # Prepare optimizer and schedule (linear warmup and decay)
@@ -307,8 +307,6 @@ def train(args, train_dataset, model, tokenizer):
                 with amp.scale_loss(loss, optimizer) as scaled_loss:
                     scaled_loss.backward()
             else:
-                if step > 9:
-                    pdb.set_trace()
                 loss.backward()
 
             tr_loss += loss.item()
