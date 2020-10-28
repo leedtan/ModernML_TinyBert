@@ -813,19 +813,25 @@ def main(args):
             raise NotImplementedError
 
     if args.mixout > 0:
-        from mixout import MixLinear
+        from mixout import MixLinear, mixout_layer
 
-        for sup_module in model.modules():
+        for sup_module in list(model.modules()):
             for name, module in sup_module.named_children():
                 if isinstance(module, nn.Dropout):
                     module.p = 0.0
                 if isinstance(module, nn.Linear):
                     target_state_dict = module.state_dict()
                     bias = True if module.bias is not None else False
-                    new_module = MixLinear(
-                        module.in_features, module.out_features, bias, target_state_dict["weight"], args.mixout
-                    )
-                    new_module.load_state_dict(target_state_dict)
+
+                    # need to add flag
+                    if 1:
+                        new_module = mixout_layer(module, args.mixout)
+
+                    else:
+                        new_module = MixLinear(
+                            module.in_features, module.out_features, bias, target_state_dict["weight"], args.mixout
+                        )
+                        new_module.load_state_dict(target_state_dict)
                     setattr(sup_module, name, new_module)
     print(model)
 
