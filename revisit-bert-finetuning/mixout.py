@@ -64,8 +64,6 @@ class Mixout_normal(InplaceFunction):
         if ctx.p == 1:
             output = target
         else:
-            import pdb
-            pdb.set_trace()
             output = ((1 - ctx.noise) * target + ctx.noise * output) * torch.norm(output) / torch.norm((1 - ctx.noise) * target + ctx.noise * output)
         return output
 
@@ -160,7 +158,7 @@ class mixout_layer(nn.Module):
 
         x_shape = x.shape
         x = torch.flatten(x, end_dim=-2)
-
+        
         self.noise = torch.FloatTensor(x.shape[0], self.layer.out_features, self.layer.in_features).uniform_(0, 1)
         self.mask = (self.noise < self.p)
         self.mask = self.mask.type(torch.FloatTensor)
@@ -174,8 +172,6 @@ class mixout_layer(nn.Module):
             self.masked_layer = self.masked_layer * torch.norm(
                 self.layer.weight) / torch.norm(self.masked_layer, dim=[1, 2]).unsqueeze(1).unsqueeze(2)
         # bs, output
-        import pdb
-        pdb.set_trace()
         self.output = (x.unsqueeze(1) * self.masked_layer).sum(2) + self.layer.bias.unsqueeze(0)
         self.output = self.output.view(*x_shape[:-1], -1)
         return self.output

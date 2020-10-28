@@ -300,7 +300,7 @@ def train(args, train_dataset, model, tokenizer):
                 l2_reg += sum_diff
 
             print(loss, l2_reg)
-            loss += l2_reg * 5e-1
+            loss += l2_reg * 1e-2
 
             if args.fp16:
                 with amp.scale_loss(loss, optimizer) as scaled_loss:
