@@ -64,8 +64,9 @@ class Mixout_normal(InplaceFunction):
         if ctx.p == 1:
             output = target
         else:
-            output = ((1 - ctx.noise) * target + ctx.noise * output) * torch.norm(
-                output) / torch.norm((1 - ctx.noise) * target + ctx.noise * output)
+            import pdb
+            pdb.set_trace()
+            output = ((1 - ctx.noise) * target + ctx.noise * output) * torch.norm(output) / torch.norm((1 - ctx.noise) * target + ctx.noise * output)
         return output
 
     @staticmethod
