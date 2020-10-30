@@ -1,10 +1,10 @@
-##++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-## Created by: Cheolhyoung Lee
-## Department of Mathematical Sciences, KAIST
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Created by: Cheolhyoung Lee
+# Department of Mathematical Sciences, KAIST
 ## Email: cheolhyoung.lee@kaist.ac.kr
-## Implementation of mixout from https://arxiv.org/abs/1909.11299
+# Implementation of mixout from https://arxiv.org/abs/1909.11299
 ## "Mixout: Effective Regularization to Finetune Large-scale Pretrained Language Models"
-##++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 import math
 import torch
 import torch.nn as nn
@@ -30,7 +30,8 @@ class Mixout_normal(InplaceFunction):
         #input is fine-tuned
         # p is probability to use pre-trained (dropout probability)
         if p < 0 or p > 1:
-            raise ValueError("A mix probability of mixout has to be between 0 and 1," " but got {}".format(p))
+            raise ValueError(
+                "A mix probability of mixout has to be between 0 and 1," " but got {}".format(p))
         if target is not None and input.size() != target.size():
             raise ValueError(
                 "A target tensor size must match with a input tensor size {},"
@@ -57,14 +58,20 @@ class Mixout_normal(InplaceFunction):
         if len(ctx.noise.size()) == 1:
             ctx.noise.bernoulli_(1 - ctx.p)
         else:
-            ctx.noise[0].bernoulli_(1 - ctx.p)
-            ctx.noise = ctx.noise[0].repeat(input.size()[0], 1)
+            ctx.noise[:, 0].bernoulli_(1 - ctx.p)
+            ctx.noise = ctx.noise[:, 0].repeat(input.size()[1], 1)
+            ctx.noise = torch.transpose(ctx.noise, 0, 1)
+        # import pdb
+        # print(ctx.noise.shape)
+        # print(input.shape)
+        # pdb.set_trace()
         ctx.noise.expand_as(input)
 
         if ctx.p == 1:
             output = target
         else:
-            output = ((1 - ctx.noise) * target + ctx.noise * output) * torch.norm(output) / torch.norm((1 - ctx.noise) * target + ctx.noise * output)
+            output = ((1 - ctx.noise) * target + ctx.noise * output) * torch.norm(
+                output) / torch.norm((1 - ctx.noise) * target + ctx.noise * output)
         return output
 
     @staticmethod
@@ -90,7 +97,8 @@ class Mixout(InplaceFunction):
     @classmethod
     def forward(cls, ctx, input, target=None, p=0.0, training=False, inplace=False):
         if p < 0 or p > 1:
-            raise ValueError("A mix probability of mixout has to be between 0 and 1," " but got {}".format(p))
+            raise ValueError(
+                "A mix probability of mixout has to be between 0 and 1," " but got {}".format(p))
         if target is not None and input.size() != target.size():
             raise ValueError(
                 "A target tensor size must match with a input tensor size {},"
@@ -124,7 +132,8 @@ class Mixout(InplaceFunction):
         if ctx.p == 1:
             output = target
         else:
-            output = ((1 - ctx.noise) * target + ctx.noise * output - ctx.p * target) / (1 - ctx.p)
+            output = ((1 - ctx.noise) * target + ctx.noise *
+                      output - ctx.p * target) / (1 - ctx.p)
         return output
 
     @staticmethod
@@ -137,7 +146,6 @@ class Mixout(InplaceFunction):
 
 def mixout(input, target=None, p=0.0, training=False, inplace=False):
     return Mixout_normal.apply(input, target, p, training, inplace)
-
 
 
 class mixout_layer(nn.Module):
@@ -158,21 +166,25 @@ class mixout_layer(nn.Module):
 
         x_shape = x.shape
         x = torch.flatten(x, end_dim=-2)
-        
-        self.noise = torch.FloatTensor(x.shape[0], self.layer.out_features, self.layer.in_features).uniform_(0, 1)
+
+        self.noise = torch.FloatTensor(
+            x.shape[0], self.layer.out_features, self.layer.in_features).uniform_(0, 1)
         self.mask = (self.noise < self.p)
         self.mask = self.mask.type(torch.FloatTensor)
         # mask bs, input, output
         # layer frozen input, output
-        self.frozen_masked = self.mask * torch.unsqueeze(self.layer_frozen.weight, 0)
-        self.learned_masked = (1 - self.mask) * torch.unsqueeze(self.layer.weight, 0)
+        self.frozen_masked = self.mask * \
+            torch.unsqueeze(self.layer_frozen.weight, 0)
+        self.learned_masked = (1 - self.mask) * \
+            torch.unsqueeze(self.layer.weight, 0)
         # bs, input, output
         self.masked_layer = (self.frozen_masked + self.learned_masked)
         if self.norm_flag:
             self.masked_layer = self.masked_layer * torch.norm(
                 self.layer.weight) / torch.norm(self.masked_layer, dim=[1, 2]).unsqueeze(1).unsqueeze(2)
         # bs, output
-        self.output = (x.unsqueeze(1) * self.masked_layer).sum(2) + self.layer.bias.unsqueeze(0)
+        self.output = (x.unsqueeze(1) * self.masked_layer).sum(2) + \
+            self.layer.bias.unsqueeze(0)
         self.output = self.output.view(*x_shape[:-1], -1)
         return self.output
 
@@ -183,6 +195,7 @@ class MixLinear(torch.nn.Module):
     # is equivalent to nn.Sequential(nn.Linear(m, n), nn.Dropout(p), nn.Linear(m', n')).
     # If you want to change a dropout layer to a mixout layer,
     # you should replace nn.Linear right after nn.Dropout(p) with Mixout(p)
+
     def __init__(self, in_features, out_features, bias=True, target=None, p=0.0):
         super(MixLinear, self).__init__()
         self.in_features = in_features
@@ -213,4 +226,3 @@ class MixLinear(torch.nn.Module):
         return "{}={}, in_features={}, out_features={}, bias={}".format(
             type + "out", self.p, self.in_features, self.out_features, self.bias is not None
         )
-

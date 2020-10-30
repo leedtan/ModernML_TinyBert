@@ -30,7 +30,7 @@ python run_glue_experiment.py \
     --gradient_accumulation_steps 2 --logging_steps 0 --num_loggings 10 \
     --save_steps 0 --test_val_split --use_torch_adamw --cache_dir C:\\workspace\\ModernML_TinyBert\\glue_data\\cache \
     --num_train_epochs 3.0 --warmup_ratio 0.1 --learning_rate 2e-05 \
-    --output_dir bert_output/MIXOUT/RTE/L3en2 --mixout 0.1 --no_cuda
+    --output_dir bert_output/MIXOUT/RTE/reverseds1e2 --mixout 0.1 --no_cuda
 
     
 python run_glue_experiment.py \
