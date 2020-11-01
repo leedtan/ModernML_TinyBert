@@ -166,27 +166,49 @@ class mixout_layer(nn.Module):
 
         x_shape = x.shape
         x = torch.flatten(x, end_dim=-2)
-
+        learned_layer_output = self.layer(x)
+        frozen_layer_output = self.layer_frozen(x)
         self.noise = torch.FloatTensor(
-            x.shape[0], self.layer.out_features, self.layer.in_features).uniform_(0, 1)
+            x.shape[0], self.layer.out_features).uniform_(0, 1)
         self.mask = (self.noise < self.p)
         self.mask = self.mask.type(torch.FloatTensor)
-        # mask bs, input, output
-        # layer frozen input, output
-        self.frozen_masked = self.mask * \
-            torch.unsqueeze(self.layer_frozen.weight, 0)
-        self.learned_masked = (1 - self.mask) * \
-            torch.unsqueeze(self.layer.weight, 0)
-        # bs, input, output
-        self.masked_layer = (self.frozen_masked + self.learned_masked)
-        if self.norm_flag:
-            self.masked_layer = self.masked_layer * torch.norm(
-                self.layer.weight) / torch.norm(self.masked_layer, dim=[1, 2]).unsqueeze(1).unsqueeze(2)
-        # bs, output
-        self.output = (x.unsqueeze(1) * self.masked_layer).sum(2) + \
-            self.layer.bias.unsqueeze(0)
+        self.masked_learned = learned_layer_output * (1-self.mask)
+        self.masked_frozen = frozen_layer_output * self.mask
+        self.raw_output = self.masked_learned + self.masked_frozen
+        self.num_scale = self.normalize(
+            learned_layer_output, frozen_layer_output)
+        self.denom_scale = self.normalize(
+            self.raw_output, frozen_layer_output, keepdim=True, dim=[1])
+        self.output = self.raw_output * self.normalize(
+            learned_layer_output, frozen_layer_output) / self.normalize(
+            self.raw_output, frozen_layer_output, keepdim=True, dim=[1])
+#         torch.norm(self.raw_output - learned_layer_output, dim=[1], keepdim=True,
+#                                                            p = lambda x: sum(abs(x)))
         self.output = self.output.view(*x_shape[:-1], -1)
         return self.output
+
+    def normalize(self, x, x_frozen, dim=None, keepdim=False):
+        return torch.norm(x - x_frozen, dim=dim, keepdim=keepdim, p=1).detach() + 1e-10
+#         self.noise = torch.FloatTensor(
+#             x.shape[0], self.layer.out_features, self.layer.in_features).uniform_(0, 1)
+#         self.mask = (self.noise < self.p)
+#         self.mask = self.mask.type(torch.FloatTensor)
+#         # mask bs, input, output
+#         # layer frozen input, output
+#         self.frozen_masked = self.mask * \
+#             torch.unsqueeze(self.layer_frozen.weight, 0)
+#         self.learned_masked = (1 - self.mask) * \
+#             torch.unsqueeze(self.layer.weight, 0)
+#         # bs, input, output
+#         self.masked_layer = (self.frozen_masked + self.learned_masked)
+#         if self.norm_flag:
+#             self.masked_layer = self.masked_layer * torch.norm(
+#                 self.layer.weight) / torch.norm(self.masked_layer, dim=[1, 2]).unsqueeze(1).unsqueeze(2)
+#         # bs, output
+#         self.output = (x.unsqueeze(1) * self.masked_layer).sum(2) + \
+#             self.layer.bias.unsqueeze(0)
+#         self.output = self.output.view(*x_shape[:-1], -1)
+#         return self.output
 
 
 class MixLinear(torch.nn.Module):

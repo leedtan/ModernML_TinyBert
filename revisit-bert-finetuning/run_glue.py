@@ -897,7 +897,7 @@ def main(args):
                     bias = True if module.bias is not None else False
 
                     # need to add flag
-                    if 0:
+                    if 1:
                         new_module = mixout_layer(module, args.mixout)
 
                     else:
