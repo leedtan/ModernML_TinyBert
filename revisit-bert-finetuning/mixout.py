@@ -170,25 +170,36 @@ class mixout_layer(nn.Module):
         frozen_layer_output = self.layer_frozen(x)
         self.noise = torch.FloatTensor(
             x.shape[0], self.layer.out_features).uniform_(0, 1)
-        self.mask = (self.noise < self.p)
-        self.mask = self.mask.type(torch.FloatTensor)
+        self.mask = (self.noise < self.p).type(torch.FloatTensor)
         self.masked_learned = learned_layer_output * (1-self.mask)
         self.masked_frozen = frozen_layer_output * self.mask
         self.raw_output = self.masked_learned + self.masked_frozen
-        self.num_scale = self.normalize(
+        # self.num_scale = self.normalize(
+        #     learned_layer_output, frozen_layer_output)
+        # self.denom_scale = self.normalize(
+        #     self.raw_output, frozen_layer_output, keepdim=True, dim=[1])
+        self.desired_norm = self.normalize(
             learned_layer_output, frozen_layer_output)
-        self.denom_scale = self.normalize(
-            self.raw_output, frozen_layer_output, keepdim=True, dim=[1])
-        self.output = self.raw_output * self.normalize(
-            learned_layer_output, frozen_layer_output) / self.normalize(
-            self.raw_output, frozen_layer_output, keepdim=True, dim=[1])
+        self.raw_norm = self.normalize(self.raw_output, frozen_layer_output,
+                                       keepdim=True, dim=[1])
+        # self.output = self.raw_output * (self.desired_norm / self.raw_norm)
+
+        # self.output = self.raw_output * self.normalize(
+        #     learned_layer_output, frozen_layer_output) / self.normalize(
+        #     self.raw_output, frozen_layer_output, keepdim=True, dim=[1])
+
+        self.output = self.raw_output
+
 #         torch.norm(self.raw_output - learned_layer_output, dim=[1], keepdim=True,
 #                                                            p = lambda x: sum(abs(x)))
         self.output = self.output.view(*x_shape[:-1], -1)
+        # if np.random.uniform() > .999:
+        #     import pdb
+        #     pdb.set_trace()
         return self.output
 
     def normalize(self, x, x_frozen, dim=None, keepdim=False):
-        return torch.norm(x - x_frozen, dim=dim, keepdim=keepdim, p=1).detach() + 1e-10
+        return torch.norm(x - x_frozen, dim=dim, keepdim=keepdim, p=1) + 1e-10
 #         self.noise = torch.FloatTensor(
 #             x.shape[0], self.layer.out_features, self.layer.in_features).uniform_(0, 1)
 #         self.mask = (self.noise < self.p)

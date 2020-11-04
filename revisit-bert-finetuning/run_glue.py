@@ -283,7 +283,6 @@ def train(args, train_dataset, model, tokenizer):
         epoch_iterator = tqdm(train_dataloader, desc="Iteration",
                               disable=args.local_rank not in [-1, 0])
         for step, batch in enumerate(epoch_iterator):
-
             # Skip past any already trained steps if resuming training
             if steps_trained_in_current_epoch > 0:
                 steps_trained_in_current_epoch -= 1
@@ -345,7 +344,8 @@ def train(args, train_dataset, model, tokenizer):
                 else:
                     torch.nn.utils.clip_grad_norm_(
                         model.parameters(), args.max_grad_norm)
-
+                import pdb
+                # pdb.set_trace()
                 optimizer.step()
                 scheduler.step()  # Update learning rate schedule
                 model.zero_grad()
