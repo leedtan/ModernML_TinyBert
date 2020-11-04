@@ -182,44 +182,13 @@ class mixout_layer(nn.Module):
             learned_layer_output, frozen_layer_output)
         self.raw_norm = self.normalize(self.raw_output, frozen_layer_output,
                                        keepdim=True, dim=[1])
-        # self.output = self.raw_output * (self.desired_norm / self.raw_norm)
-
-        # self.output = self.raw_output * self.normalize(
-        #     learned_layer_output, frozen_layer_output) / self.normalize(
-        #     self.raw_output, frozen_layer_output, keepdim=True, dim=[1])
-
-        self.output = self.raw_output
-
-#         torch.norm(self.raw_output - learned_layer_output, dim=[1], keepdim=True,
-#                                                            p = lambda x: sum(abs(x)))
+        delta = (self.raw_output - frozen_layer_output)
+        self.output = delta * (self.desired_norm / self.raw_norm) + frozen_layer_output
         self.output = self.output.view(*x_shape[:-1], -1)
-        # if np.random.uniform() > .999:
-        #     import pdb
-        #     pdb.set_trace()
         return self.output
 
     def normalize(self, x, x_frozen, dim=None, keepdim=False):
         return torch.norm(x - x_frozen, dim=dim, keepdim=keepdim, p=1) + 1e-10
-#         self.noise = torch.FloatTensor(
-#             x.shape[0], self.layer.out_features, self.layer.in_features).uniform_(0, 1)
-#         self.mask = (self.noise < self.p)
-#         self.mask = self.mask.type(torch.FloatTensor)
-#         # mask bs, input, output
-#         # layer frozen input, output
-#         self.frozen_masked = self.mask * \
-#             torch.unsqueeze(self.layer_frozen.weight, 0)
-#         self.learned_masked = (1 - self.mask) * \
-#             torch.unsqueeze(self.layer.weight, 0)
-#         # bs, input, output
-#         self.masked_layer = (self.frozen_masked + self.learned_masked)
-#         if self.norm_flag:
-#             self.masked_layer = self.masked_layer * torch.norm(
-#                 self.layer.weight) / torch.norm(self.masked_layer, dim=[1, 2]).unsqueeze(1).unsqueeze(2)
-#         # bs, output
-#         self.output = (x.unsqueeze(1) * self.masked_layer).sum(2) + \
-#             self.layer.bias.unsqueeze(0)
-#         self.output = self.output.view(*x_shape[:-1], -1)
-#         return self.output
 
 
 class MixLinear(torch.nn.Module):
