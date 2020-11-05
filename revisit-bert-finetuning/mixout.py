@@ -61,10 +61,6 @@ class Mixout_normal(InplaceFunction):
             ctx.noise[:, 0].bernoulli_(1 - ctx.p)
             ctx.noise = ctx.noise[:, 0].repeat(input.size()[1], 1)
             ctx.noise = torch.transpose(ctx.noise, 0, 1)
-        # import pdb
-        # print(ctx.noise.shape)
-        # print(input.shape)
-        # pdb.set_trace()
         ctx.noise.expand_as(input)
 
         if ctx.p == 1:
@@ -183,12 +179,17 @@ class mixout_layer(nn.Module):
         self.raw_norm = self.normalize(self.raw_output, frozen_layer_output,
                                        keepdim=True, dim=[1])
         delta = (self.raw_output - frozen_layer_output)
-        self.output = delta * (self.desired_norm / self.raw_norm) + frozen_layer_output
+        epsilon = .1
+        min_val = 1/(1 + self.p) * (1 - epsilon)
+        max_val = (1 + self.p) * (1 + epsilon)
+        multiplier = torch.clamp(
+            self.desired_norm / self.raw_norm, min_val, max_val)
+        self.output = delta * multiplier + frozen_layer_output
         self.output = self.output.view(*x_shape[:-1], -1)
         return self.output
 
     def normalize(self, x, x_frozen, dim=None, keepdim=False):
-        return torch.norm(x - x_frozen, dim=dim, keepdim=keepdim, p=1) + 1e-10
+        return torch.norm(x.detach() - x_frozen, dim=dim, keepdim=keepdim, p=1) + 1e-10
 
 
 class MixLinear(torch.nn.Module):

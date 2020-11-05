@@ -344,8 +344,6 @@ def train(args, train_dataset, model, tokenizer):
                 else:
                     torch.nn.utils.clip_grad_norm_(
                         model.parameters(), args.max_grad_norm)
-                import pdb
-                # pdb.set_trace()
                 optimizer.step()
                 scheduler.step()  # Update learning rate schedule
                 model.zero_grad()
