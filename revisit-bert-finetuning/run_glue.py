@@ -278,8 +278,8 @@ def train(args, train_dataset, model, tokenizer):
     )
     set_seed(args.seed)  # Added here for reproductibility
 
-    pretrained_model = copy.deepcopy(model)
-    pretrained_model.eval()
+    #pretrained_model = copy.deepcopy(model)
+    #pretrained_model.eval()
     for _ in train_iterator:
         epoch_iterator = tqdm(train_dataloader, desc="Iteration",
                               disable=args.local_rank not in [-1, 0])
@@ -317,14 +317,18 @@ def train(args, train_dataset, model, tokenizer):
 
             # [torch.flatten(t)[0].detach().numpy() for t in pretrained_model.parameters()][:5]
             # [torch.flatten(t)[0].detach().numpy() for t in model.parameters()][:5]
-            for finetune, pretrain in zip(model.parameters(), pretrained_model.parameters()):
-                diff = finetune - pretrain
-                diff_squared = diff**2
-                sum_diff = diff_squared.sum()
-                l2_reg += sum_diff
+            # for finetune, pretrain in zip(model.parameters(), pretrained_model.parameters()):
+            #     diff = finetune - pretrain
+            #     diff_squared = diff**2
+            #     sum_diff = diff_squared.sum()
+            #     l2_reg += sum_diff
 
-            #print(loss, l2_reg)
-            loss += l2_reg * 3e-3
+            # #print(loss, l2_reg)
+            for sup_module in list(model.modules()):
+                for name, module in sup_module.named_children():
+                    if hasattr(module,'is_our_mixout'):
+                        l2_reg += module.regularize(3e-3)
+            loss += l2_reg
 
             if args.fp16:
                 with amp.scale_loss(loss, optimizer) as scaled_loss:

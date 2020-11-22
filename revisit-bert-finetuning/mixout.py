@@ -157,6 +157,7 @@ class mixout_layer(nn.Module):
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
             self.device = device
+        self.is_our_mixout = True
         #self.device = torch.device("cpu")
     def forward(self, x):
         if isinstance(x, np.ndarray):
@@ -195,6 +196,15 @@ class mixout_layer(nn.Module):
 
     def normalize(self, x, x_frozen, dim=None, keepdim=False):
         return torch.norm(x.detach() - x_frozen, dim=dim, keepdim=keepdim, p=1) + 1e-10
+
+    def regularize(self, reg_coef):
+        l2_reg = 0
+        for finetune, pretrain in zip(self.layer.parameters(), self.layer_frozen.parameters()):
+            diff = finetune - pretrain
+            diff_squared = diff**2
+            sum_diff = diff_squared.sum()
+            l2_reg += sum_diff
+        return l2_reg * reg_coef
 
 
 class MixLinear(torch.nn.Module):

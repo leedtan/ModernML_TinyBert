@@ -68,7 +68,7 @@
     --gradient_accumulation_steps 2 --logging_steps 0 --num_loggings 10 \
     --save_steps 0 --test_val_split --use_torch_adamw --cache_dir /home/ubuntu/hf-transformers-cache \
     --num_train_epochs 3.0 --warmup_ratio 0.1 --learning_rate 2e-05 \
-    --output_dir bert_output/MIXOUT/RTE/mixout2l2reg3e3 --mixout 0.2 --no_cuda
+    --output_dir bert_output/MIXOUT/RTE/mixout2l2reg3e3 --mixout 0.2
 
 # python run_glue_experiment.py \
 #     --model_type bert --model_name_or_path bert-large-uncased --task_name RTE \
