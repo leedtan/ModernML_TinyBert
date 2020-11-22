@@ -13,7 +13,7 @@ import torch.nn.functional as F
 
 from torch.nn import Parameter
 from torch.autograd.function import InplaceFunction
-
+import pdb
 import numpy as np
 import copy
 
@@ -145,7 +145,7 @@ def mixout(input, target=None, p=0.0, training=False, inplace=False):
 
 
 class mixout_layer(nn.Module):
-    def __init__(self, linear, p, norm_flag=True):
+    def __init__(self, linear, p, device=None, norm_flag=True):
         super().__init__()
         self.layer = linear
         self.norm_flag = norm_flag
@@ -153,7 +153,11 @@ class mixout_layer(nn.Module):
         self.layer_frozen = copy.deepcopy(linear)
         for param in self.layer_frozen.parameters():
             param.requires_grad = False
-
+        if device is None:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device = device
+        #self.device = torch.device("cpu")
     def forward(self, x):
         if isinstance(x, np.ndarray):
             x = torch.Tensor(x)
@@ -162,11 +166,11 @@ class mixout_layer(nn.Module):
 
         x_shape = x.shape
         x = torch.flatten(x, end_dim=-2)
-        learned_layer_output = self.layer(x)
+        learned_layer_output = self.layer(x).to(self.device)
         frozen_layer_output = self.layer_frozen(x)
         self.noise = torch.FloatTensor(
             x.shape[0], self.layer.out_features).uniform_(0, 1)
-        self.mask = (self.noise < self.p).type(torch.FloatTensor)
+        self.mask = (self.noise < self.p).type(torch.FloatTensor).to(self.device)
         self.masked_learned = learned_layer_output * (1-self.mask)
         self.masked_frozen = frozen_layer_output * self.mask
         self.raw_output = self.masked_learned + self.masked_frozen
@@ -186,6 +190,7 @@ class mixout_layer(nn.Module):
             self.desired_norm / self.raw_norm, min_val, max_val)
         self.output = delta * multiplier + frozen_layer_output
         self.output = self.output.view(*x_shape[:-1], -1)
+        #pdb.set_trace()
         return self.output
 
     def normalize(self, x, x_frozen, dim=None, keepdim=False):

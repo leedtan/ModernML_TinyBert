@@ -19,6 +19,7 @@
 # limitations under the License.
 """ Finetuning the library models for sequence classification on GLUE (Bert, XLM, XLNet, RoBERTa, Albert, XLM-RoBERTa)."""
 
+import pdb
 import copy
 import argparse
 import glob
@@ -322,7 +323,7 @@ def train(args, train_dataset, model, tokenizer):
                 sum_diff = diff_squared.sum()
                 l2_reg += sum_diff
 
-            print(loss, l2_reg)
+            #print(loss, l2_reg)
             loss += l2_reg * 3e-3
 
             if args.fp16:
@@ -896,7 +897,7 @@ def main(args):
 
                     # need to add flag
                     if 1:
-                        new_module = mixout_layer(module, args.mixout)
+                        new_module = mixout_layer(module, args.mixout, args.device)
 
                     else:
                         new_module = MixLinear(
