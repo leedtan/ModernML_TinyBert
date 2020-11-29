@@ -26,12 +26,14 @@ class Mixout_normal(InplaceFunction):
     @classmethod
     def forward(cls, ctx, input, target=None, p=0.0, training=False, inplace=False):
 
-        #target is pretrained
-        #input is fine-tuned
+        # target is pretrained
+        # input is fine-tuned
         # p is probability to use pre-trained (dropout probability)
         if p < 0 or p > 1:
             raise ValueError(
-                "A mix probability of mixout has to be between 0 and 1," " but got {}".format(p))
+                "A mix probability of mixout has to be between 0 and 1,"
+                " but got {}".format(p)
+            )
         if target is not None and input.size() != target.size():
             raise ValueError(
                 "A target tensor size must match with a input tensor size {},"
@@ -66,8 +68,11 @@ class Mixout_normal(InplaceFunction):
         if ctx.p == 1:
             output = target
         else:
-            output = ((1 - ctx.noise) * target + ctx.noise * output) * torch.norm(
-                output) / torch.norm((1 - ctx.noise) * target + ctx.noise * output)
+            output = (
+                ((1 - ctx.noise) * target + ctx.noise * output)
+                * torch.norm(output)
+                / torch.norm((1 - ctx.noise) * target + ctx.noise * output)
+            )
         return output
 
     @staticmethod
@@ -94,7 +99,9 @@ class Mixout(InplaceFunction):
     def forward(cls, ctx, input, target=None, p=0.0, training=False, inplace=False):
         if p < 0 or p > 1:
             raise ValueError(
-                "A mix probability of mixout has to be between 0 and 1," " but got {}".format(p))
+                "A mix probability of mixout has to be between 0 and 1,"
+                " but got {}".format(p)
+            )
         if target is not None and input.size() != target.size():
             raise ValueError(
                 "A target tensor size must match with a input tensor size {},"
@@ -128,8 +135,9 @@ class Mixout(InplaceFunction):
         if ctx.p == 1:
             output = target
         else:
-            output = ((1 - ctx.noise) * target + ctx.noise *
-                      output - ctx.p * target) / (1 - ctx.p)
+            output = (
+                (1 - ctx.noise) * target + ctx.noise * output - ctx.p * target
+            ) / (1 - ctx.p)
         return output
 
     @staticmethod
@@ -145,8 +153,9 @@ def mixout(input, target=None, p=0.0, training=False, inplace=False):
 
 
 class mixout_layer(nn.Module):
-    def __init__(self, linear, p, device=None, norm_flag=True):
+    def __init__(self, linear, p, device=None, norm_flag=True, frozen=False):
         super().__init__()
+        self.frozen = frozen
         self.layer = linear
         self.norm_flag = norm_flag
         self.p = p
@@ -158,10 +167,13 @@ class mixout_layer(nn.Module):
         else:
             self.device = device
         self.is_our_mixout = True
-        #self.device = torch.device("cpu")
+        # self.device = torch.device("cpu")
+
     def forward(self, x):
         if isinstance(x, np.ndarray):
             x = torch.Tensor(x)
+        if self.frozen:
+            return self.layer_frozen(x)
         if not self.training or self.p == 0:
             return self.layer(x)
 
@@ -169,29 +181,29 @@ class mixout_layer(nn.Module):
         x = torch.flatten(x, end_dim=-2)
         learned_layer_output = self.layer(x).to(self.device)
         frozen_layer_output = self.layer_frozen(x)
-        self.noise = torch.FloatTensor(
-            x.shape[0], self.layer.out_features).uniform_(0, 1)
+        self.noise = torch.FloatTensor(x.shape[0], self.layer.out_features).uniform_(
+            0, 1
+        )
         self.mask = (self.noise < self.p).type(torch.FloatTensor).to(self.device)
-        self.masked_learned = learned_layer_output * (1-self.mask)
+        self.masked_learned = learned_layer_output * (1 - self.mask)
         self.masked_frozen = frozen_layer_output * self.mask
         self.raw_output = self.masked_learned + self.masked_frozen
         # self.num_scale = self.normalize(
         #     learned_layer_output, frozen_layer_output)
         # self.denom_scale = self.normalize(
         #     self.raw_output, frozen_layer_output, keepdim=True, dim=[1])
-        self.desired_norm = self.normalize(
-            learned_layer_output, frozen_layer_output)
-        self.raw_norm = self.normalize(self.raw_output, frozen_layer_output,
-                                       keepdim=True, dim=[1])
-        delta = (self.raw_output - frozen_layer_output)
-        epsilon = .1
-        min_val = 1/(1 + self.p) * (1 - epsilon)
+        self.desired_norm = self.normalize(learned_layer_output, frozen_layer_output)
+        self.raw_norm = self.normalize(
+            self.raw_output, frozen_layer_output, keepdim=True, dim=[1]
+        )
+        delta = self.raw_output - frozen_layer_output
+        epsilon = 0.1
+        min_val = 1 / (1 + self.p) * (1 - epsilon)
         max_val = (1 + self.p) * (1 + epsilon)
-        multiplier = torch.clamp(
-            self.desired_norm / self.raw_norm, min_val, max_val)
+        multiplier = torch.clamp(self.desired_norm / self.raw_norm, min_val, max_val)
         self.output = delta * multiplier + frozen_layer_output
         self.output = self.output.view(*x_shape[:-1], -1)
-        #pdb.set_trace()
+        # pdb.set_trace()
         return self.output
 
     def normalize(self, x, x_frozen, dim=None, keepdim=False):
@@ -199,9 +211,11 @@ class mixout_layer(nn.Module):
 
     def regularize(self, reg_coef):
         l2_reg = 0
-        for finetune, pretrain in zip(self.layer.parameters(), self.layer_frozen.parameters()):
+        for finetune, pretrain in zip(
+            self.layer.parameters(), self.layer_frozen.parameters()
+        ):
             diff = finetune - pretrain
-            diff_squared = diff**2
+            diff_squared = diff ** 2
             sum_diff = diff_squared.sum()
             l2_reg += sum_diff
         return l2_reg * reg_coef
@@ -237,10 +251,17 @@ class MixLinear(torch.nn.Module):
             init.uniform_(self.bias, -bound, bound)
 
     def forward(self, input):
-        return F.linear(input, mixout(self.weight, self.target, self.p, self.training), self.bias)
+        return F.linear(
+            input, mixout(self.weight, self.target, self.p, self.training), self.bias
+        )
 
     def extra_repr(self):
         type = "drop" if self.target is None else "mix"
         return "{}={}, in_features={}, out_features={}, bias={}".format(
-            type + "out", self.p, self.in_features, self.out_features, self.bias is not None
+            type + "out",
+            self.p,
+            self.in_features,
+            self.out_features,
+            self.bias is not None,
         )
+

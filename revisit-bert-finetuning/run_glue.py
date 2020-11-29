@@ -52,7 +52,9 @@ from transformers import (
 )
 
 from transformers import glue_compute_metrics as compute_metrics
-from transformers import glue_convert_examples_to_features as convert_examples_to_features
+from transformers import (
+    glue_convert_examples_to_features as convert_examples_to_features,
+)
 from transformers import glue_output_modes as output_modes
 from transformers import glue_processors as processors
 
@@ -78,12 +80,20 @@ def get_optimizer_grouped_parameters(args, model):
     if args.layerwise_learning_rate_decay == 1.0:
         optimizer_grouped_parameters = [
             {
-                "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
+                "params": [
+                    p
+                    for n, p in model.named_parameters()
+                    if not any(nd in n for nd in no_decay)
+                ],
                 "weight_decay": args.weight_decay,
                 "lr": args.learning_rate,
             },
             {
-                "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
+                "params": [
+                    p
+                    for n, p in model.named_parameters()
+                    if any(nd in n for nd in no_decay)
+                ],
                 "weight_decay": 0.0,
                 "lr": args.learning_rate,
             },
@@ -91,7 +101,11 @@ def get_optimizer_grouped_parameters(args, model):
     else:
         optimizer_grouped_parameters = [
             {
-                "params": [p for n, p in model.named_parameters() if "classifier" in n or "pooler" in n],
+                "params": [
+                    p
+                    for n, p in model.named_parameters()
+                    if "classifier" in n or "pooler" in n
+                ],
                 "weight_decay": 0.0,
                 "lr": args.learning_rate,
             },
@@ -99,20 +113,29 @@ def get_optimizer_grouped_parameters(args, model):
 
         if args.model_type in ["bert", "roberta", "electra"]:
             num_layers = model.config.num_hidden_layers
-            layers = [getattr(model, args.model_type).embeddings] + \
-                list(getattr(model, args.model_type).encoder.layer)
+            layers = [getattr(model, args.model_type).embeddings] + list(
+                getattr(model, args.model_type).encoder.layer
+            )
             layers.reverse()
             lr = args.learning_rate
             for layer in layers:
                 lr *= args.layerwise_learning_rate_decay
                 optimizer_grouped_parameters += [
                     {
-                        "params": [p for n, p in layer.named_parameters() if not any(nd in n for nd in no_decay)],
+                        "params": [
+                            p
+                            for n, p in layer.named_parameters()
+                            if not any(nd in n for nd in no_decay)
+                        ],
                         "weight_decay": args.weight_decay,
                         "lr": lr,
                     },
                     {
-                        "params": [p for n, p in layer.named_parameters() if any(nd in n for nd in no_decay)],
+                        "params": [
+                            p
+                            for n, p in layer.named_parameters()
+                            if any(nd in n for nd in no_decay)
+                        ],
                         "weight_decay": 0.0,
                         "lr": lr,
                     },
@@ -129,16 +152,21 @@ def train(args, train_dataset, model, tokenizer):
             pass  # create a new file
 
     if args.train_batch_size == 0:
-        args.train_batch_size = args.per_gpu_train_batch_size * \
-            max(1, args.n_gpu)
-    train_sampler = RandomSampler(
-        train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
+        args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
+    train_sampler = (
+        RandomSampler(train_dataset)
+        if args.local_rank == -1
+        else DistributedSampler(train_dataset)
+    )
     train_dataloader = DataLoader(
-        train_dataset, sampler=train_sampler, batch_size=args.train_batch_size)
+        train_dataset, sampler=train_sampler, batch_size=args.train_batch_size
+    )
 
     eval_task_names = (args.task_name,)
-    eval_datasets = [load_and_cache_examples(
-        args, task, tokenizer, evaluate=True) for task in eval_task_names]
+    eval_datasets = [
+        load_and_cache_examples(args, task, tokenizer, evaluate=True)
+        for task in eval_task_names
+    ]
     if args.test_val_split:
         assert len(eval_datasets) == 1
         val_test_indices = []
@@ -151,23 +179,30 @@ def train(args, train_dataset, model, tokenizer):
             for class_num, indices in class2idx.items():
                 state = np.random.RandomState(1)
                 state.shuffle(indices)
-                class_val_indices, class_test_indices = indices[: len(
-                    indices) // 2], indices[len(indices) // 2:]
+                class_val_indices, class_test_indices = (
+                    indices[: len(indices) // 2],
+                    indices[len(indices) // 2 :],
+                )
                 val_indices += class_val_indices
                 test_indices += class_test_indices
             val_indices = torch.tensor(val_indices).long()
             test_indices = torch.tensor(test_indices).long()
             val_test_indices.append((val_indices, test_indices))
-            eval_dataset.tensors = [t[val_indices]
-                                    for t in eval_dataset.tensors]
+            eval_dataset.tensors = [t[val_indices] for t in eval_dataset.tensors]
 
     if args.max_steps > 0:
         t_total = args.max_steps
-        args.num_train_epochs = args.max_steps // (
-            len(train_dataloader) // args.gradient_accumulation_steps) + 1
+        args.num_train_epochs = (
+            args.max_steps
+            // (len(train_dataloader) // args.gradient_accumulation_steps)
+            + 1
+        )
     else:
-        t_total = len(
-            train_dataloader) // args.gradient_accumulation_steps * args.num_train_epochs
+        t_total = (
+            len(train_dataloader)
+            // args.gradient_accumulation_steps
+            * args.num_train_epochs
+        )
 
     # assert args.logging_steps == 0 or args.num_loggings == 0, "Can only use 1 logging option"
     if args.logging_steps == 0:
@@ -179,12 +214,14 @@ def train(args, train_dataset, model, tokenizer):
         args.warmup_steps = int(args.warmup_ratio * t_total)
 
     # Prepare optimizer and schedule (linear warmup and decay)
-    optimizer_grouped_parameters = get_optimizer_grouped_parameters(
-        args, model)
+    optimizer_grouped_parameters = get_optimizer_grouped_parameters(args, model)
 
     if args.use_torch_adamw:
         optimizer = torch.optim.AdamW(
-            optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon, weight_decay=args.weight_decay
+            optimizer_grouped_parameters,
+            lr=args.learning_rate,
+            eps=args.adam_epsilon,
+            weight_decay=args.weight_decay,
         )
     else:
         optimizer = AdamW(
@@ -200,23 +237,27 @@ def train(args, train_dataset, model, tokenizer):
     )
 
     # Check if saved optimizer or scheduler states exist
-    if os.path.isfile(os.path.join(args.model_name_or_path, "optimizer.pt")) and os.path.isfile(
-        os.path.join(args.model_name_or_path, "scheduler.pt")
-    ):
+    if os.path.isfile(
+        os.path.join(args.model_name_or_path, "optimizer.pt")
+    ) and os.path.isfile(os.path.join(args.model_name_or_path, "scheduler.pt")):
         # Load in optimizer and scheduler states
-        optimizer.load_state_dict(torch.load(
-            os.path.join(args.model_name_or_path, "optimizer.pt")))
-        scheduler.load_state_dict(torch.load(
-            os.path.join(args.model_name_or_path, "scheduler.pt")))
+        optimizer.load_state_dict(
+            torch.load(os.path.join(args.model_name_or_path, "optimizer.pt"))
+        )
+        scheduler.load_state_dict(
+            torch.load(os.path.join(args.model_name_or_path, "scheduler.pt"))
+        )
 
     if args.fp16:
         try:
             from apex import amp
         except ImportError:
             raise ImportError(
-                "Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
+                "Please install apex from https://www.github.com/nvidia/apex to use fp16 training."
+            )
         model, optimizer = amp.initialize(
-            model, optimizer, opt_level=args.fp16_opt_level)
+            model, optimizer, opt_level=args.fp16_opt_level
+        )
 
     # multi-gpu training (should be after apex fp16 initialization)
     if args.n_gpu > 1:
@@ -225,24 +266,26 @@ def train(args, train_dataset, model, tokenizer):
     # Distributed training (should be after apex fp16 initialization)
     if args.local_rank != -1:
         model = torch.nn.parallel.DistributedDataParallel(
-            model, device_ids=[
-                args.local_rank], output_device=args.local_rank, find_unused_parameters=True,
+            model,
+            device_ids=[args.local_rank],
+            output_device=args.local_rank,
+            find_unused_parameters=True,
         )
 
     # Train!
     logger.info("***** Running training *****")
     logger.info("  Num examples = %d", len(train_dataset))
     logger.info("  Num Epochs = %d", args.num_train_epochs)
-    logger.info("  Instantaneous batch size per GPU = %d",
-                args.per_gpu_train_batch_size)
+    logger.info(
+        "  Instantaneous batch size per GPU = %d", args.per_gpu_train_batch_size
+    )
     logger.info(
         "  Total train batch size (w. parallel, distributed & accumulation) = %d",
         args.train_batch_size
         * args.gradient_accumulation_steps
         * (torch.distributed.get_world_size() if args.local_rank != -1 else 1),
     )
-    logger.info("  Gradient Accumulation steps = %d",
-                args.gradient_accumulation_steps)
+    logger.info("  Gradient Accumulation steps = %d", args.gradient_accumulation_steps)
     logger.info("  Total optimization steps = %d", t_total)
 
     global_step = 0
@@ -252,21 +295,24 @@ def train(args, train_dataset, model, tokenizer):
     if os.path.exists(args.model_name_or_path):
         # set global_step to global_step of last saved checkpoint from model path
         try:
-            global_step = int(
-                args.model_name_or_path.split("-")[-1].split("/")[0])
+            global_step = int(args.model_name_or_path.split("-")[-1].split("/")[0])
         except ValueError:
             global_step = 0
-        epochs_trained = global_step // (len(train_dataloader) //
-                                         args.gradient_accumulation_steps)
+        epochs_trained = global_step // (
+            len(train_dataloader) // args.gradient_accumulation_steps
+        )
         steps_trained_in_current_epoch = global_step % (
-            len(train_dataloader) // args.gradient_accumulation_steps)
+            len(train_dataloader) // args.gradient_accumulation_steps
+        )
 
         logger.info(
-            "  Continuing training from checkpoint, will skip to saved global_step")
+            "  Continuing training from checkpoint, will skip to saved global_step"
+        )
         logger.info("  Continuing training from epoch %d", epochs_trained)
         logger.info("  Continuing training from global step %d", global_step)
         logger.info(
-            "  Will skip the first %d steps in the first epoch", steps_trained_in_current_epoch,
+            "  Will skip the first %d steps in the first epoch",
+            steps_trained_in_current_epoch,
         )
 
     tr_loss, logging_loss = 0.0, 0.0
@@ -274,15 +320,19 @@ def train(args, train_dataset, model, tokenizer):
     best_model = None
     model.zero_grad()
     train_iterator = trange(
-        epochs_trained, int(args.num_train_epochs), desc="Epoch", disable=args.local_rank not in [-1, 0],
+        epochs_trained,
+        int(args.num_train_epochs),
+        desc="Epoch",
+        disable=args.local_rank not in [-1, 0],
     )
     set_seed(args.seed)  # Added here for reproductibility
 
-    #pretrained_model = copy.deepcopy(model)
-    #pretrained_model.eval()
+    # pretrained_model = copy.deepcopy(model)
+    # pretrained_model.eval()
     for _ in train_iterator:
-        epoch_iterator = tqdm(train_dataloader, desc="Iteration",
-                              disable=args.local_rank not in [-1, 0])
+        epoch_iterator = tqdm(
+            train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0]
+        )
         for step, batch in enumerate(epoch_iterator):
             # Skip past any already trained steps if resuming training
             if steps_trained_in_current_epoch > 0:
@@ -298,8 +348,7 @@ def train(args, train_dataset, model, tokenizer):
             }
             if args.model_type not in {"distilbert", "bart"}:
                 inputs["token_type_ids"] = (
-                    batch[2] if args.model_type in [
-                        "bert", "xlnet", "albert"] else None
+                    batch[2] if args.model_type in ["bert", "xlnet", "albert"] else None
                 )  # XLM, DistilBERT, RoBERTa, and XLM-RoBERTa don't use segment_ids
             outputs = model(**inputs)
             # model outputs are always tuple in transformers (see doc)
@@ -324,10 +373,17 @@ def train(args, train_dataset, model, tokenizer):
             #     l2_reg += sum_diff
 
             # #print(loss, l2_reg)
+            layer_itr = 0
             for sup_module in list(model.modules()):
                 for name, module in sup_module.named_children():
-                    if hasattr(module,'is_our_mixout'):
-                        l2_reg += module.regularize(3e-3)
+                    if hasattr(module, "is_our_mixout"):
+                        layer_itr += 1
+                        if layer_itr < 24:
+                            l2_reg_layer = 1e-2
+                        else:
+                            mix_depth = (layer_itr - 124) / 124
+                            l2_reg_layer = 1e-2 * (1e-1 ** mix_depth)
+                        l2_reg += module.regularize(l2_reg_layer)
             loss += l2_reg
 
             if args.fp16:
@@ -345,30 +401,36 @@ def train(args, train_dataset, model, tokenizer):
             ):
                 if args.fp16:
                     torch.nn.utils.clip_grad_norm_(
-                        amp.master_params(optimizer), args.max_grad_norm)
+                        amp.master_params(optimizer), args.max_grad_norm
+                    )
                 else:
                     torch.nn.utils.clip_grad_norm_(
-                        model.parameters(), args.max_grad_norm)
+                        model.parameters(), args.max_grad_norm
+                    )
                 optimizer.step()
                 scheduler.step()  # Update learning rate schedule
                 model.zero_grad()
                 global_step += 1
 
                 if args.local_rank in [-1, 0] and (
-                    (args.logging_steps > 0 and global_step %
-                     args.logging_steps == 0) or (global_step == t_total)
+                    (args.logging_steps > 0 and global_step % args.logging_steps == 0)
+                    or (global_step == t_total)
                 ):
                     logs = {}
                     if args.local_rank == -1:
                         results = evaluate(
-                            args, model, tokenizer, eval_datasets=eval_datasets)
+                            args, model, tokenizer, eval_datasets=eval_datasets
+                        )
                         for key, value in results.items():
                             eval_key = "val_{}".format(key)
                             logs[eval_key] = value
 
-                    if args.local_rank in [-1, 0] and args.save_best and logs["val_acc"] > best_val_acc:
-                        output_dir = os.path.join(
-                            args.output_dir, "checkpoint-best")
+                    if (
+                        args.local_rank in [-1, 0]
+                        and args.save_best
+                        and logs["val_acc"] > best_val_acc
+                    ):
+                        output_dir = os.path.join(args.output_dir, "checkpoint-best")
                         os.makedirs(output_dir, exist_ok=True)
                         model_to_save = (
                             model.module if hasattr(model, "module") else model
@@ -376,37 +438,44 @@ def train(args, train_dataset, model, tokenizer):
                         model_to_save.save_pretrained(output_dir)
                         tokenizer.save_pretrained(output_dir)
 
-                        torch.save(args, os.path.join(
-                            output_dir, "training_args.bin"))
-                        logger.info(
-                            "Saving model checkpoint to %s", output_dir)
+                        torch.save(args, os.path.join(output_dir, "training_args.bin"))
+                        logger.info("Saving model checkpoint to %s", output_dir)
 
                         torch.save(
-                            optimizer.state_dict(), os.path.join(output_dir, "optimizer.pt"),
+                            optimizer.state_dict(),
+                            os.path.join(output_dir, "optimizer.pt"),
                         )
                         torch.save(
-                            scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"),
+                            scheduler.state_dict(),
+                            os.path.join(output_dir, "scheduler.pt"),
                         )
                         logger.info(
-                            "Saving optimizer and scheduler states to %s", output_dir)
+                            "Saving optimizer and scheduler states to %s", output_dir
+                        )
 
                     if "val_acc" in logs:
                         if logs["val_acc"] > best_val_acc:
                             best_val_acc = logs["val_acc"]
-                            best_model = {k: v.cpu().detach()
-                                          for k, v in model.state_dict().items()}
+                            best_model = {
+                                k: v.cpu().detach()
+                                for k, v in model.state_dict().items()
+                            }
                         logs["best_val_acc"] = best_val_acc
                     elif "val_mcc" in logs:
                         if logs["val_mcc"] > best_val_acc:
                             best_val_acc = logs["val_mcc"]
-                            best_model = {k: v.cpu().detach()
-                                          for k, v in model.state_dict().items()}
+                            best_model = {
+                                k: v.cpu().detach()
+                                for k, v in model.state_dict().items()
+                            }
                         logs["best_val_mcc"] = best_val_acc
                     elif "val_spearmanr":
                         if logs["val_spearmanr"] > best_val_acc:
                             best_val_acc = logs["val_spearmanr"]
-                            best_model = {k: v.cpu().detach()
-                                          for k, v in model.state_dict().items()}
+                            best_model = {
+                                k: v.cpu().detach()
+                                for k, v in model.state_dict().items()
+                            }
                         logs["best_val_spearmanr"] = best_val_acc
                     else:
                         raise ValueError(f"logs:{logs}")
@@ -416,11 +485,11 @@ def train(args, train_dataset, model, tokenizer):
 
                     if args.logging_steps > 0:
                         if global_step % args.logging_steps == 0:
-                            loss_scalar = (
-                                tr_loss - logging_loss) / args.logging_steps
+                            loss_scalar = (tr_loss - logging_loss) / args.logging_steps
                         else:
-                            loss_scalar = (tr_loss - logging_loss) / \
-                                (global_step % args.logging_steps)
+                            loss_scalar = (tr_loss - logging_loss) / (
+                                global_step % args.logging_steps
+                            )
                     else:
                         loss_scalar = (tr_loss - logging_loss) / global_step
                     logs["loss"] = loss_scalar
@@ -436,10 +505,15 @@ def train(args, train_dataset, model, tokenizer):
                             f.write(f"{v:.6f},")
                         f.write("\n")
 
-                if args.local_rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
+                if (
+                    args.local_rank in [-1, 0]
+                    and args.save_steps > 0
+                    and global_step % args.save_steps == 0
+                ):
                     # Save model checkpoint
                     output_dir = os.path.join(
-                        args.output_dir, "checkpoint-last".format(global_step))
+                        args.output_dir, "checkpoint-last".format(global_step)
+                    )
                     os.makedirs(output_dir, exist_ok=True)
                     model_to_save = (
                         model.module if hasattr(model, "module") else model
@@ -447,16 +521,18 @@ def train(args, train_dataset, model, tokenizer):
                     model_to_save.save_pretrained(output_dir)
                     tokenizer.save_pretrained(output_dir)
 
-                    torch.save(args, os.path.join(
-                        output_dir, "training_args.bin"))
+                    torch.save(args, os.path.join(output_dir, "training_args.bin"))
                     logger.info("Saving model checkpoint to %s", output_dir)
 
-                    torch.save(optimizer.state_dict(), os.path.join(
-                        output_dir, "optimizer.pt"))
-                    torch.save(scheduler.state_dict(), os.path.join(
-                        output_dir, "scheduler.pt"))
+                    torch.save(
+                        optimizer.state_dict(), os.path.join(output_dir, "optimizer.pt")
+                    )
+                    torch.save(
+                        scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt")
+                    )
                     logger.info(
-                        "Saving optimizer and scheduler states to %s", output_dir)
+                        "Saving optimizer and scheduler states to %s", output_dir
+                    )
 
             if args.max_steps > 0 and global_step > args.max_steps:
                 epoch_iterator.close()
@@ -469,13 +545,14 @@ def train(args, train_dataset, model, tokenizer):
     eval_task_names = (args.task_name,)
 
     # test the last checkpoint on the second half
-    eval_datasets = [load_and_cache_examples(
-        args, task, tokenizer, evaluate=True) for task in eval_task_names]
+    eval_datasets = [
+        load_and_cache_examples(args, task, tokenizer, evaluate=True)
+        for task in eval_task_names
+    ]
     if args.test_val_split:
         for i, eval_dataset in enumerate(eval_datasets):
             test_indices = val_test_indices[i][1]
-            eval_dataset.tensors = [t[test_indices]
-                                    for t in eval_dataset.tensors]
+            eval_dataset.tensors = [t[test_indices] for t in eval_dataset.tensors]
 
     result = evaluate(args, model, tokenizer, eval_datasets=eval_datasets)
     result["step"] = t_total
@@ -488,13 +565,14 @@ def train(args, train_dataset, model, tokenizer):
         model.load_state_dict(best_model)
 
     # test on the second half
-    eval_datasets = [load_and_cache_examples(
-        args, task, tokenizer, evaluate=True) for task in eval_task_names]
+    eval_datasets = [
+        load_and_cache_examples(args, task, tokenizer, evaluate=True)
+        for task in eval_task_names
+    ]
     if args.test_val_split:
         for i, eval_dataset in enumerate(eval_datasets):
             test_indices = val_test_indices[i][1]
-            eval_dataset.tensors = [t[test_indices]
-                                    for t in eval_dataset.tensors]
+            eval_dataset.tensors = [t[test_indices] for t in eval_dataset.tensors]
 
     result = evaluate(args, model, tokenizer, eval_datasets=eval_datasets)
     result["step"] = t_total
@@ -511,10 +589,13 @@ def evaluate(args, model, tokenizer, prefix="", eval_datasets=None):
     eval_outputs_dirs = [args.output_dir]
 
     results = {}
-    for i, (eval_task, eval_output_dir) in enumerate(zip(eval_task_names, eval_outputs_dirs)):
+    for i, (eval_task, eval_output_dir) in enumerate(
+        zip(eval_task_names, eval_outputs_dirs)
+    ):
         if eval_datasets is None:
             eval_dataset = load_and_cache_examples(
-                args, eval_task, tokenizer, evaluate=True)
+                args, eval_task, tokenizer, evaluate=True
+            )
         elif isinstance(eval_datasets, list):
             eval_dataset = eval_datasets[i]
         else:
@@ -523,12 +604,12 @@ def evaluate(args, model, tokenizer, prefix="", eval_datasets=None):
         if not os.path.exists(eval_output_dir) and args.local_rank in [-1, 0]:
             os.makedirs(eval_output_dir)
 
-        args.eval_batch_size = args.per_gpu_eval_batch_size * \
-            max(1, args.n_gpu)
+        args.eval_batch_size = args.per_gpu_eval_batch_size * max(1, args.n_gpu)
         # Note that DistributedSampler samples randomly
         eval_sampler = SequentialSampler(eval_dataset)
         eval_dataloader = DataLoader(
-            eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
+            eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size
+        )
 
         # multi-gpu eval
         if args.n_gpu > 1 and not isinstance(model, torch.nn.DataParallel):
@@ -551,8 +632,9 @@ def evaluate(args, model, tokenizer, prefix="", eval_datasets=None):
                 }
                 if args.model_type not in {"distilbert", "bart"}:
                     inputs["token_type_ids"] = (
-                        batch[2] if args.model_type in [
-                            "bert", "xlnet", "albert"] else None
+                        batch[2]
+                        if args.model_type in ["bert", "xlnet", "albert"]
+                        else None
                     )  # XLM, DistilBERT, RoBERTa, and XLM-RoBERTa don't use segment_ids
                 outputs = model(**inputs)
                 tmp_eval_loss, logits = outputs[:2]
@@ -566,7 +648,8 @@ def evaluate(args, model, tokenizer, prefix="", eval_datasets=None):
             else:
                 preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
                 out_label_ids = np.append(
-                    out_label_ids, inputs["labels"].detach().cpu().numpy(), axis=0)
+                    out_label_ids, inputs["labels"].detach().cpu().numpy(), axis=0
+                )
 
         eval_loss = eval_loss / nb_eval_steps
         if args.output_mode == "classification":
@@ -599,8 +682,7 @@ def load_and_cache_examples(args, task, tokenizer, evaluate=False):
         ),
     )
     if os.path.exists(cached_features_file) and not args.overwrite_cache:
-        logger.info("Loading features from cached file %s",
-                    cached_features_file)
+        logger.info("Loading features from cached file %s", cached_features_file)
         features = torch.load(cached_features_file)
     else:
         logger.info("Creating features from dataset file at %s", args.data_dir)
@@ -609,8 +691,9 @@ def load_and_cache_examples(args, task, tokenizer, evaluate=False):
             # HACK(label indices are swapped in RoBERTa pretrained model)
             label_list[1], label_list[2] = label_list[2], label_list[1]
         examples = (
-            processor.get_dev_examples(
-                args.data_dir) if evaluate else processor.get_train_examples(args.data_dir)
+            processor.get_dev_examples(args.data_dir)
+            if evaluate
+            else processor.get_train_examples(args.data_dir)
         )
         features = convert_examples_to_features(
             examples,
@@ -620,8 +703,7 @@ def load_and_cache_examples(args, task, tokenizer, evaluate=False):
             output_mode=output_mode,
         )
         if args.local_rank in [-1, 0]:
-            logger.info("Saving features into cached file %s",
-                        cached_features_file)
+            logger.info("Saving features into cached file %s", cached_features_file)
             torch.save(features, cached_features_file)
 
     if args.local_rank == 0 and not evaluate:
@@ -638,7 +720,9 @@ def load_and_cache_examples(args, task, tokenizer, evaluate=False):
             for i, f in enumerate(features):
                 label_to_idx[f.label].append(i)
 
-            samples_per_class = args.resplit_val if evaluate else args.downsample_trainset
+            samples_per_class = (
+                args.resplit_val if evaluate else args.downsample_trainset
+            )
             samples_per_class = samples_per_class // len(label_to_idx)
 
             for k in label_to_idx:
@@ -652,35 +736,35 @@ def load_and_cache_examples(args, task, tokenizer, evaluate=False):
                 else:
                     if args.resplit_val > 0 and args.downsample_trainset <= 0:
                         samples_per_class = len(
-                            label_to_idx[k]) - args.resplit_val // len(label_to_idx)
+                            label_to_idx[k]
+                        ) - args.resplit_val // len(label_to_idx)
                     label_to_idx[k] = label_to_idx[k][:samples_per_class]
 
             sampled_idx = np.concatenate(list(label_to_idx.values()))
         else:
             if args.downsample_trainset > 0:
-                sampled_idx = torch.randperm(len(features))[
-                    : args.downsample_trainset]
+                sampled_idx = torch.randperm(len(features))[: args.downsample_trainset]
             else:
                 raise NotImplementedError
         set_seed(args.seed)
         features = [features[i] for i in sampled_idx]
 
     # Convert to Tensors and build dataset
-    all_input_ids = torch.tensor(
-        [f.input_ids for f in features], dtype=torch.long)
+    all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long)
     all_attention_mask = torch.tensor(
-        [f.attention_mask for f in features], dtype=torch.long)
+        [f.attention_mask for f in features], dtype=torch.long
+    )
     all_token_type_ids = torch.tensor(
-        [f.token_type_ids for f in features], dtype=torch.long)
+        [f.token_type_ids for f in features], dtype=torch.long
+    )
     if output_mode == "classification":
-        all_labels = torch.tensor(
-            [f.label for f in features], dtype=torch.long)
+        all_labels = torch.tensor([f.label for f in features], dtype=torch.long)
     elif output_mode == "regression":
-        all_labels = torch.tensor(
-            [f.label for f in features], dtype=torch.float)
+        all_labels = torch.tensor([f.label for f in features], dtype=torch.float)
 
     dataset = TensorDataset(
-        all_input_ids, all_attention_mask, all_token_type_ids, all_labels)
+        all_input_ids, all_attention_mask, all_token_type_ids, all_labels
+    )
     return dataset
 
 
@@ -707,13 +791,15 @@ def main(args):
 
         print("Waiting for debugger attach")
         ptvsd.enable_attach(
-            address=(args.server_ip, args.server_port), redirect_output=True)
+            address=(args.server_ip, args.server_port), redirect_output=True
+        )
         ptvsd.wait_for_attach()
 
     # Setup CUDA, GPU & distributed training
     if args.local_rank == -1 or args.no_cuda:
         device = torch.device(
-            "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
+            "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu"
+        )
         args.n_gpu = 0 if args.no_cuda else torch.cuda.device_count()
     else:  # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
         torch.cuda.set_device(args.local_rank)
@@ -755,8 +841,7 @@ def main(args):
 
     args.model_type = args.model_type.lower()
 
-    num_labels_old = AutoConfig.from_pretrained(
-        args.model_name_or_path).num_labels
+    num_labels_old = AutoConfig.from_pretrained(args.model_name_or_path).num_labels
     config = AutoConfig.from_pretrained(
         args.config_name if args.config_name else args.model_name_or_path,
         num_labels=num_labels_old,
@@ -797,15 +882,17 @@ def main(args):
                 if isinstance(module, (nn.Linear, nn.Embedding)):
                     # Slightly different from the TF version which uses truncated_normal for initialization
                     # cf https://github.com/pytorch/pytorch/pull/5617
-                    module.weight.data.normal_(
-                        mean=0.0, std=config.initializer_range)
+                    module.weight.data.normal_(mean=0.0, std=config.initializer_range)
                 if isinstance(module, nn.Linear) and module.bias is not None:
                     module.bias.data.zero_()
         elif args.model_type == "bart":
             from transformers.modeling_bart import BartClassificationHead
 
             model.classification_head = BartClassificationHead(
-                config.d_model, config.d_model, config.num_labels, config.classif_dropout,
+                config.d_model,
+                config.d_model,
+                config.num_labels,
+                config.classif_dropout,
             )
             model.model._init_weights(model.classification_head.dense)
             model.model._init_weights(model.classification_head.out_proj)
@@ -823,13 +910,13 @@ def main(args):
         if args.model_type in ["bert", "roberta"]:
             encoder_temp = getattr(model, args.model_type)
             encoder_temp.pooler.dense.weight.data.normal_(
-                mean=0.0, std=encoder_temp.config.initializer_range)
+                mean=0.0, std=encoder_temp.config.initializer_range
+            )
             encoder_temp.pooler.dense.bias.data.zero_()
             for p in encoder_temp.pooler.parameters():
                 p.requires_grad = True
         elif args.model_type in ["xlnet", "bart", "electra"]:
-            raise ValueError(
-                f"{args.model_type} does not have a pooler at the end")
+            raise ValueError(f"{args.model_type} does not have a pooler at the end")
         else:
             raise NotImplementedError
 
@@ -839,28 +926,33 @@ def main(args):
             from transformers.modeling_bert import BertLayerNorm
 
             encoder_temp = getattr(model, args.model_type)
-            for layer in encoder_temp.encoder.layer[-args.reinit_layers:]:
+            for layer in encoder_temp.encoder.layer[-args.reinit_layers :]:
                 for module in layer.modules():
                     if isinstance(module, (nn.Linear, nn.Embedding)):
                         # Slightly different from the TF version which uses truncated_normal for initialization
                         # cf https://github.com/pytorch/pytorch/pull/5617
                         module.weight.data.normal_(
-                            mean=0.0, std=encoder_temp.config.initializer_range)
+                            mean=0.0, std=encoder_temp.config.initializer_range
+                        )
                     elif isinstance(module, BertLayerNorm):
                         module.bias.data.zero_()
                         module.weight.data.fill_(1.0)
                     if isinstance(module, nn.Linear) and module.bias is not None:
                         module.bias.data.zero_()
         elif args.model_type == "xlnet":
-            from transformers.modeling_xlnet import XLNetLayerNorm, XLNetRelativeAttention
+            from transformers.modeling_xlnet import (
+                XLNetLayerNorm,
+                XLNetRelativeAttention,
+            )
 
-            for layer in model.transformer.layer[-args.reinit_layers:]:
+            for layer in model.transformer.layer[-args.reinit_layers :]:
                 for module in layer.modules():
                     if isinstance(module, (nn.Linear, nn.Embedding)):
                         # Slightly different from the TF version which uses truncated_normal for initialization
                         # cf https://github.com/pytorch/pytorch/pull/5617
                         module.weight.data.normal_(
-                            mean=0.0, std=model.transformer.config.initializer_range)
+                            mean=0.0, std=model.transformer.config.initializer_range
+                        )
                         if isinstance(module, nn.Linear) and module.bias is not None:
                             module.bias.data.zero_()
                     elif isinstance(module, XLNetLayerNorm):
@@ -879,15 +971,16 @@ def main(args):
                             module.seg_embed,
                         ]:
                             param.data.normal_(
-                                mean=0.0, std=model.transformer.config.initializer_range)
+                                mean=0.0, std=model.transformer.config.initializer_range
+                            )
         elif args.model_type == "bart":
-            for layer in model.model.decoder.layers[-args.reinit_layers:]:
+            for layer in model.model.decoder.layers[-args.reinit_layers :]:
                 for module in layer.modules():
                     model.model._init_weights(module)
 
         else:
             raise NotImplementedError
-
+    layer_itr = 0
     if args.mixout > 0:
         from mixout import MixLinear, mixout_layer
 
@@ -901,16 +994,31 @@ def main(args):
 
                     # need to add flag
                     if 1:
-                        new_module = mixout_layer(module, args.mixout, args.device)
+                        layer_itr += 1
+                        if layer_itr < 24:
+                            mix_ratio = 0
+                            new_module = mixout_layer(
+                                module, mix_ratio, args.device, frozen=True
+                            )
+                        else:
+                            mix_depth = (layer_itr - 124) / 124
+                            mix_ratio = (mix_depth * 0.3) + (1 - mix_depth) * 0.3
+                            mix_ratio = 0.2
+                            new_module = mixout_layer(module, mix_ratio, args.device)
 
                     else:
                         new_module = MixLinear(
-                            module.in_features, module.out_features, bias, target_state_dict[
-                                "weight"], args.mixout
+                            module.in_features,
+                            module.out_features,
+                            bias,
+                            target_state_dict["weight"],
+                            args.mixout,
                         )
                         new_module.load_state_dict(target_state_dict)
                     setattr(sup_module, name, new_module)
     print(model)
+    # print("num layers mixout:", layer_itr)
+    # prints 146
 
     model.to(args.device)
 
@@ -919,10 +1027,10 @@ def main(args):
     # Training
     if args.do_train:
         train_dataset = load_and_cache_examples(
-            args, args.task_name, tokenizer, evaluate=False)
+            args, args.task_name, tokenizer, evaluate=False
+        )
         global_step, tr_loss = train(args, train_dataset, model, tokenizer)
-        logger.info(" global_step = %s, average loss = %s",
-                    global_step, tr_loss)
+        logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
     # Saving best-practices: if you use defaults names for the model, you can reload it using from_pretrained()
     if args.do_train and (args.local_rank == -1 or torch.distributed.get_rank() == 0):
