@@ -373,17 +373,18 @@ def train(args, train_dataset, model, tokenizer):
             #     l2_reg += sum_diff
 
             # #print(loss, l2_reg)
+            n_frozen = 4
             layer_itr = 0
             for sup_module in list(model.modules()):
                 for name, module in sup_module.named_children():
                     if hasattr(module, "is_our_mixout"):
-                        layer_itr += 1
-                        if layer_itr < 24:
-                            l2_reg_layer = 1e-2
-                        else:
-                            mix_depth = (layer_itr - 124) / 124
-                            l2_reg_layer = 1e-2 * (1e-1 ** mix_depth)
-                        l2_reg += module.regularize(l2_reg_layer)
+                        # layer_itr += 1
+                        # if layer_itr < (12 * n_frozen):
+                        #     l2_reg_layer = 1e-2
+                        # else:
+                        #     mix_depth = (layer_itr - 124) / 124
+                        #     l2_reg_layer = 1e-2 * (1e-1 ** mix_depth)
+                        l2_reg += module.regularize(3e-3)
             loss += l2_reg
 
             if args.fp16:
@@ -920,12 +921,59 @@ def main(args):
         else:
             raise NotImplementedError
 
-    if args.reinit_layers > 0:
+    from mixout import MixLinear, mixout_layer
+
+    if args.reinit_layers > 0 or args.mixout_layers > 0:
         if args.model_type in ["bert", "roberta", "electra"]:
             assert args.reinit_pooler or args.model_type == "electra"
             from transformers.modeling_bert import BertLayerNorm
 
             encoder_temp = getattr(model, args.model_type)
+            re_layers = args.reinit_layers
+            mix_layers = args.mixout_layers
+            num_frozen = 12 - (re_layers + mix_layers)
+            layer_itr = 0
+            first_mixout_index = 12 * num_frozen
+            first_reinit_index = 12 * (12 - re_layers)
+            dgblayers = [
+                [module for module in layer.modules()]
+                for layer in encoder_temp.encoder.layer
+            ]
+            for sup_module in list(model.modules()):
+                for name, module in sup_module.named_children():
+                    # for layer in encoder_temp.encoder.layer[
+                    #     -(args.reinit_layers + args.mixout_layers) : -args.reinit_layers
+                    # ]:
+                    #     for module in layer.modules():
+                    if isinstance(module, nn.Linear):
+                        for i, layer_group in enumerate(dgblayers):
+                            for j, single_layer in enumerate(layer_group):
+                                if single_layer == module:
+                                    print("layer_group:", i, "within_group:", j)
+                        if (
+                            layer_itr >= first_mixout_index
+                            and layer_itr < first_reinit_index
+                        ):
+                            layer_itr += 1
+                            target_state_dict = module.state_dict()
+                            bias = True if module.bias is not None else False
+                            if 1:
+                                new_module = mixout_layer(
+                                    module, args.mixout, args.device
+                                )
+
+                            else:
+                                new_module = MixLinear(
+                                    module.in_features,
+                                    module.out_features,
+                                    bias,
+                                    target_state_dict["weight"],
+                                    args.mixout,
+                                )
+                                new_module.load_state_dict(target_state_dict)
+                            setattr(sup_module, name, new_module)
+                    if isinstance(module, nn.Dropout):
+                        module.p = 0.0
             for layer in encoder_temp.encoder.layer[-args.reinit_layers :]:
                 for module in layer.modules():
                     if isinstance(module, (nn.Linear, nn.Embedding)):
@@ -993,9 +1041,10 @@ def main(args):
                     bias = True if module.bias is not None else False
 
                     # need to add flag
+                    n_frozen = 4
                     if 1:
                         layer_itr += 1
-                        if layer_itr < 24:
+                        if layer_itr < (12 * n_frozen):
                             mix_ratio = 0
                             new_module = mixout_layer(
                                 module, mix_ratio, args.device, frozen=True
@@ -1003,7 +1052,7 @@ def main(args):
                         else:
                             mix_depth = (layer_itr - 124) / 124
                             mix_ratio = (mix_depth * 0.3) + (1 - mix_depth) * 0.3
-                            mix_ratio = 0.2
+                            mix_ratio = 0.3
                             new_module = mixout_layer(module, mix_ratio, args.device)
 
                     else:
