@@ -338,8 +338,8 @@ def train(args, train_dataset, model, tokenizer):
         for sup_module in list(model.modules()):
             for name, module in sup_module.named_children():
                 if hasattr(module, "is_our_mixout"):
-                    #unfreeze mixout if we have already trained
-                    #for two epochs
+                    # unfreeze mixout if we have already trained
+                    # for two epochs
                     if epoch_counter > 2:
                         module.frozen = False
         for step, batch in enumerate(epoch_iterator):
@@ -958,19 +958,22 @@ def main(args):
                         for i, layer_group in enumerate(dgblayers):
                             for j, single_layer in enumerate(layer_group):
                                 if single_layer == module:
-                                    print("layer_group:", i, "within_group:", j)
+                                    pass
+                                    # print("layer_group:", i, "within_group:", j)
+                        layer_itr += 1
                         if (
                             layer_itr >= first_mixout_index
                             and layer_itr < first_reinit_index
                         ):
-                            layer_itr += 1
                             target_state_dict = module.state_dict()
                             bias = True if module.bias is not None else False
                             if 1:
                                 new_module = mixout_layer(
-                                    module, args.mixout, args.device, frozen=True
+                                    module,
+                                    args.mixout,
+                                    args.device,
+                                    layer_mixout=args.layer_mixout,
                                 )
-
                             else:
                                 new_module = MixLinear(
                                     module.in_features,
@@ -1074,7 +1077,7 @@ def main(args):
     #                     )
     #                     new_module.load_state_dict(target_state_dict)
     #                 setattr(sup_module, name, new_module)
-    print(model)
+    # print(model)
     # print("num layers mixout:", layer_itr)
     # prints 146
 

@@ -256,6 +256,9 @@ def get_parser():
     parser.add_argument(
         "--reinit_pooler", action="store_true", help="reinitialize the pooler",
     )
+    parser.add_argument(
+        "--layer_mixout", action="store_true", help="reinitialize the pooler",
+    )
     parser.add_argument("--rezero_layers", type=int, default=0, help="re-zero layers")
     parser.add_argument(
         "--mixout", type=float, default=0.0, help="mixout probability (default: 0)"

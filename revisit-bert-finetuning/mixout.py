@@ -153,8 +153,11 @@ def mixout(input, target=None, p=0.0, training=False, inplace=False):
 
 
 class mixout_layer(nn.Module):
-    def __init__(self, linear, p, device=None, norm_flag=True, frozen=False):
+    def __init__(
+        self, linear, p, device=None, norm_flag=True, frozen=False, layer_mixout=False
+    ):
         super().__init__()
+        self.layer_mixout = layer_mixout
         self.frozen = frozen
         self.layer = linear
         self.norm_flag = norm_flag
@@ -176,6 +179,13 @@ class mixout_layer(nn.Module):
             return self.layer_frozen(x)
         if not self.training or self.p == 0:
             return self.layer(x)
+        if self.layer_mixout:
+            # if np.random.uniform() < 0.1:
+            mixed = np.random.uniform() < self.p
+            if mixed:
+                return self.layer_frozen(x)
+            else:
+                return self.layer(x).to(self.device)
 
         x_shape = x.shape
         x = torch.flatten(x, end_dim=-2)
