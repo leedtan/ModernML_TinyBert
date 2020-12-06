@@ -329,10 +329,19 @@ def train(args, train_dataset, model, tokenizer):
 
     # pretrained_model = copy.deepcopy(model)
     # pretrained_model.eval()
+    epoch_counter = 0
     for _ in train_iterator:
         epoch_iterator = tqdm(
             train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0]
         )
+        epoch_counter += 1
+        for sup_module in list(model.modules()):
+            for name, module in sup_module.named_children():
+                if hasattr(module, "is_our_mixout"):
+                    #unfreeze mixout if we have already trained
+                    #for two epochs
+                    if epoch_counter > 2:
+                        module.frozen = False
         for step, batch in enumerate(epoch_iterator):
             # Skip past any already trained steps if resuming training
             if steps_trained_in_current_epoch > 0:
@@ -959,7 +968,7 @@ def main(args):
                             bias = True if module.bias is not None else False
                             if 1:
                                 new_module = mixout_layer(
-                                    module, args.mixout, args.device
+                                    module, args.mixout, args.device, frozen=True
                                 )
 
                             else:
@@ -1028,43 +1037,43 @@ def main(args):
 
         else:
             raise NotImplementedError
-    layer_itr = 0
-    if args.mixout > 0:
-        from mixout import MixLinear, mixout_layer
+    # layer_itr = 0
+    # if args.mixout > 0:
+    #     from mixout import MixLinear, mixout_layer
 
-        for sup_module in list(model.modules()):
-            for name, module in sup_module.named_children():
-                if isinstance(module, nn.Dropout):
-                    module.p = 0.0
-                if isinstance(module, nn.Linear):
-                    target_state_dict = module.state_dict()
-                    bias = True if module.bias is not None else False
+    #     for sup_module in list(model.modules()):
+    #         for name, module in sup_module.named_children():
+    #             if isinstance(module, nn.Dropout):
+    #                 module.p = 0.0
+    #             if isinstance(module, nn.Linear):
+    #                 target_state_dict = module.state_dict()
+    #                 bias = True if module.bias is not None else False
 
-                    # need to add flag
-                    n_frozen = 4
-                    if 1:
-                        layer_itr += 1
-                        if layer_itr < (12 * n_frozen):
-                            mix_ratio = 0
-                            new_module = mixout_layer(
-                                module, mix_ratio, args.device, frozen=True
-                            )
-                        else:
-                            mix_depth = (layer_itr - 124) / 124
-                            mix_ratio = (mix_depth * 0.3) + (1 - mix_depth) * 0.3
-                            mix_ratio = 0.3
-                            new_module = mixout_layer(module, mix_ratio, args.device)
+    #                 # need to add flag
+    #                 n_frozen = 4
+    #                 if 1:
+    #                     layer_itr += 1
+    #                     if layer_itr < (12 * n_frozen):
+    #                         mix_ratio = 0
+    #                         new_module = mixout_layer(
+    #                             module, mix_ratio, args.device, frozen=True
+    #                         )
+    #                     else:
+    #                         mix_depth = (layer_itr - 124) / 124
+    #                         mix_ratio = (mix_depth * 0.3) + (1 - mix_depth) * 0.3
+    #                         mix_ratio = 0.3
+    #                         new_module = mixout_layer(module, mix_ratio, args.device)
 
-                    else:
-                        new_module = MixLinear(
-                            module.in_features,
-                            module.out_features,
-                            bias,
-                            target_state_dict["weight"],
-                            args.mixout,
-                        )
-                        new_module.load_state_dict(target_state_dict)
-                    setattr(sup_module, name, new_module)
+    #                 else:
+    #                     new_module = MixLinear(
+    #                         module.in_features,
+    #                         module.out_features,
+    #                         bias,
+    #                         target_state_dict["weight"],
+    #                         args.mixout,
+    #                     )
+    #                     new_module.load_state_dict(target_state_dict)
+    #                 setattr(sup_module, name, new_module)
     print(model)
     # print("num layers mixout:", layer_itr)
     # prints 146
