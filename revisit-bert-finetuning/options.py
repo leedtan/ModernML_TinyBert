@@ -254,6 +254,12 @@ def get_parser():
         help="mixout layers before reinit layers after frozen layers",
     )
     parser.add_argument(
+        "--unfreeze_after_epoch",
+        type=int,
+        default=0,
+        help="freeze mixout operation until the given epoch. Defaults to unfreezing at the beginning.",
+    )
+    parser.add_argument(
         "--reinit_pooler", action="store_true", help="reinitialize the pooler",
     )
     parser.add_argument(

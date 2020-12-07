@@ -172,6 +172,14 @@ class mixout_layer(nn.Module):
         self.is_our_mixout = True
         # self.device = torch.device("cpu")
 
+    def __repr__(self):
+        return f"""mixout_layer(
+            norm_flag={self.norm_flag},
+            p={self.p},
+            device={self.device},
+            frozen={self.frozen}
+        )"""
+
     def forward(self, x):
         if isinstance(x, np.ndarray):
             x = torch.Tensor(x)

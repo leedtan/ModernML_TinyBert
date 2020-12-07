@@ -332,18 +332,17 @@ def train(args, train_dataset, model, tokenizer):
     epoch_counter = 0
     for _ in train_iterator:
         epoch_iterator = tqdm(
-            train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0]
+            train_dataloader, desc="iteration", disable=args.local_rank not in [-1, 0]
         )
-        epoch_counter += 1
-        for sup_module in list(model.modules()):
-            for name, module in sup_module.named_children():
-                if hasattr(module, "is_our_mixout"):
-                    # unfreeze mixout if we have already trained
-                    # for two epochs
-                    if epoch_counter > 2:
-                        module.frozen = False
+        mix_counter = 0
+        if args.unfreeze_after_epoch == epoch_counter:
+            print('unfreezing mixout layers')
+        for module in list(model.modules()):
+            if hasattr(module, 'is_our_mixout'):
+                if args.unfreeze_after_epoch == epoch_counter:
+                    module.frozen = False
         for step, batch in enumerate(epoch_iterator):
-            # Skip past any already trained steps if resuming training
+            # skip past any already trained steps if resuming training
             if steps_trained_in_current_epoch > 0:
                 steps_trained_in_current_epoch -= 1
                 continue
@@ -357,8 +356,8 @@ def train(args, train_dataset, model, tokenizer):
             }
             if args.model_type not in {"distilbert", "bart"}:
                 inputs["token_type_ids"] = (
-                    batch[2] if args.model_type in ["bert", "xlnet", "albert"] else None
-                )  # XLM, DistilBERT, RoBERTa, and XLM-RoBERTa don't use segment_ids
+                    batch[2] if args.model_type in ["bert", "xlnet", "albert"] else none
+                )  # xlm, distilbert, roberta, and xlm-roberta don't use segment_ids
             outputs = model(**inputs)
             # model outputs are always tuple in transformers (see doc)
             loss = outputs[0]
@@ -385,15 +384,14 @@ def train(args, train_dataset, model, tokenizer):
             n_frozen = 4
             layer_itr = 0
             for sup_module in list(model.modules()):
-                for name, module in sup_module.named_children():
-                    if hasattr(module, "is_our_mixout"):
-                        # layer_itr += 1
-                        # if layer_itr < (12 * n_frozen):
-                        #     l2_reg_layer = 1e-2
-                        # else:
-                        #     mix_depth = (layer_itr - 124) / 124
-                        #     l2_reg_layer = 1e-2 * (1e-1 ** mix_depth)
-                        l2_reg += module.regularize(3e-3)
+                if hasattr(module, "is_our_mixout"):
+                    # layer_itr += 1
+                    # if layer_itr < (12 * n_frozen):
+                    #     l2_reg_layer = 1e-2
+                    # else:
+                    #     mix_depth = (layer_itr - 124) / 124
+                    #     l2_reg_layer = 1e-2 * (1e-1 ** mix_depth)
+                    l2_reg += module.regularize(3e-3)
             loss += l2_reg
 
             if args.fp16:
@@ -547,10 +545,11 @@ def train(args, train_dataset, model, tokenizer):
             if args.max_steps > 0 and global_step > args.max_steps:
                 epoch_iterator.close()
                 break
+        epoch_counter += 1
         if args.max_steps > 0 and global_step > args.max_steps:
             train_iterator.close()
             break
-
+            
     args.resplit_val = 0  # test on the original test_set
     eval_task_names = (args.task_name,)
 
@@ -973,6 +972,7 @@ def main(args):
                                     args.mixout,
                                     args.device,
                                     layer_mixout=args.layer_mixout,
+                                    frozen=True,
                                 )
                             else:
                                 new_module = MixLinear(
