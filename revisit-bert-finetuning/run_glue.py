@@ -329,6 +329,11 @@ def train(args, train_dataset, model, tokenizer):
 
     # pretrained_model = copy.deepcopy(model)
     # pretrained_model.eval()
+    for module in list(model.modules()):
+        if hasattr(module, 'is_our_mixout'):
+            test_mix = module
+            break
+    print(module)
     epoch_counter = 0
     for _ in train_iterator:
         epoch_iterator = tqdm(
@@ -336,7 +341,7 @@ def train(args, train_dataset, model, tokenizer):
         )
         mix_counter = 0
         if args.unfreeze_after_epoch == epoch_counter:
-            print('unfreezing mixout layers')
+            print('\n unfreezing mixout layers \n')
         for module in list(model.modules()):
             if hasattr(module, 'is_our_mixout'):
                 if args.unfreeze_after_epoch == epoch_counter:
@@ -933,7 +938,7 @@ def main(args):
 
     if args.reinit_layers > 0 or args.mixout_layers > 0:
         if args.model_type in ["bert", "roberta", "electra"]:
-            assert args.reinit_pooler or args.model_type == "electra"
+            # assert args.reinit_pooler or args.model_type == "electra"
             from transformers.modeling_bert import BertLayerNorm
 
             encoder_temp = getattr(model, args.model_type)
@@ -973,6 +978,7 @@ def main(args):
                                     args.device,
                                     layer_mixout=args.layer_mixout,
                                     frozen=True,
+                                    norm_flag=args.normalize,
                                 )
                             else:
                                 new_module = MixLinear(
@@ -986,19 +992,20 @@ def main(args):
                             setattr(sup_module, name, new_module)
                     if isinstance(module, nn.Dropout):
                         module.p = 0.0
-            for layer in encoder_temp.encoder.layer[-args.reinit_layers :]:
-                for module in layer.modules():
-                    if isinstance(module, (nn.Linear, nn.Embedding)):
-                        # Slightly different from the TF version which uses truncated_normal for initialization
-                        # cf https://github.com/pytorch/pytorch/pull/5617
-                        module.weight.data.normal_(
-                            mean=0.0, std=encoder_temp.config.initializer_range
-                        )
-                    elif isinstance(module, BertLayerNorm):
-                        module.bias.data.zero_()
-                        module.weight.data.fill_(1.0)
-                    if isinstance(module, nn.Linear) and module.bias is not None:
-                        module.bias.data.zero_()
+            if args.reinit_layers > 0:
+                for layer in encoder_temp.encoder.layer[-args.reinit_layers :]:
+                    for module in layer.modules():
+                        if isinstance(module, (nn.Linear, nn.Embedding)):
+                            # Slightly different from the TF version which uses truncated_normal for initialization
+                            # cf https://github.com/pytorch/pytorch/pull/5617
+                            module.weight.data.normal_(
+                                mean=0.0, std=encoder_temp.config.initializer_range
+                            )
+                        elif isinstance(module, BertLayerNorm):
+                            module.bias.data.zero_()
+                            module.weight.data.fill_(1.0)
+                        if isinstance(module, nn.Linear) and module.bias is not None:
+                            module.bias.data.zero_()
         elif args.model_type == "xlnet":
             from transformers.modeling_xlnet import (
                 XLNetLayerNorm,
