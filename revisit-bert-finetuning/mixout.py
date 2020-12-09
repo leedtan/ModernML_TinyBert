@@ -210,19 +210,21 @@ class mixout_layer(nn.Module):
         #     learned_layer_output, frozen_layer_output)
         # self.denom_scale = self.normalize(
         #     self.raw_output, frozen_layer_output, keepdim=True, dim=[1])
-        self.desired_norm = self.normalize(learned_layer_output, frozen_layer_output)
-        self.raw_norm = self.normalize(
-            self.raw_output, frozen_layer_output, keepdim=True, dim=[1]
-        )
-        delta = self.raw_output - frozen_layer_output
-        epsilon = 0.1
-        min_val = 1 / (1 + self.p) * (1 - epsilon)
-        max_val = (1 + self.p) * (1 + epsilon)
-        multiplier = torch.clamp(self.desired_norm / self.raw_norm, min_val, max_val)
-        self.output = delta * multiplier + frozen_layer_output
-        self.output = self.output.view(*x_shape[:-1], -1)
-        # pdb.set_trace()
-        return self.output
+        if self.norm_flag:
+            self.desired_norm = self.normalize(learned_layer_output, frozen_layer_output)
+            self.raw_norm = self.normalize(
+                self.raw_output, frozen_layer_output, keepdim=True, dim=[1]
+            )
+            delta = self.raw_output - frozen_layer_output
+            epsilon = 0.1
+            min_val = 1 / (1 + self.p) * (1 - epsilon)
+            max_val = (1 + self.p) * (1 + epsilon)
+            multiplier = torch.clamp(self.desired_norm / self.raw_norm, min_val, max_val)
+            self.output = delta * multiplier + frozen_layer_output
+            self.output = self.output.view(*x_shape[:-1], -1)
+            return self.output
+        else:
+            return self.raw_output.view(*x_shape[:-1], -1)
 
     def normalize(self, x, x_frozen, dim=None, keepdim=False):
         return torch.norm(x.detach() - x_frozen, dim=dim, keepdim=keepdim, p=1) + 1e-10
