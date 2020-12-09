@@ -17,6 +17,8 @@ import pdb
 import numpy as np
 import copy
 
+torch.autograd.set_detect_anomaly(True)
+
 
 class Mixout_normal(InplaceFunction):
     @staticmethod
@@ -24,11 +26,21 @@ class Mixout_normal(InplaceFunction):
         return input.new().resize_as_(input)
 
     @classmethod
-    def forward(cls, ctx, input, target=None, p=0.0, training=False, inplace=False):
+    def forward(
+        cls,
+        ctx,
+        input,
+        target=None,
+        p=0.0,
+        training=False,
+        inplace=False,
+        # layer_type="linear",
+    ):
 
         # target is pretrained
         # input is fine-tuned
         # p is probability to use pre-trained (dropout probability)
+
         if p < 0 or p > 1:
             raise ValueError(
                 "A mix probability of mixout has to be between 0 and 1,"
@@ -61,8 +73,9 @@ class Mixout_normal(InplaceFunction):
             ctx.noise.bernoulli_(1 - ctx.p)
         else:
             ctx.noise[:, 0].bernoulli_(1 - ctx.p)
-            ctx.noise = ctx.noise[:, 0].repeat(input.size()[1], 1)
-            ctx.noise = torch.transpose(ctx.noise, 0, 1)
+            if len(input.size()) < 4:
+                ctx.noise = ctx.noise[:, 0].repeat(input.size()[1], 1)
+                ctx.noise = torch.transpose(ctx.noise, 0, 1)
         ctx.noise.expand_as(input)
 
         if ctx.p == 1:
@@ -138,6 +151,9 @@ class Mixout(InplaceFunction):
             output = (
                 (1 - ctx.noise) * target + ctx.noise * output - ctx.p * target
             ) / (1 - ctx.p)
+
+        if output.isnan().cpu().numpy():
+            pdb.set_trace()
         return output
 
     @staticmethod
@@ -148,7 +164,10 @@ class Mixout(InplaceFunction):
             return grad_output, None, None, None, None
 
 
-def mixout(input, target=None, p=0.0, training=False, inplace=False):
+def mixout(
+    input, target=None, p=0.0, training=False, inplace=False, layer_type="linear"
+):
+
     return Mixout_normal.apply(input, target, p, training, inplace)
 
 
@@ -278,14 +297,21 @@ class MixLinear(torch.nn.Module):
         p=0.0,
         layer_type="linear",
         padding=0,
+        kernel_size=None,
     ):
         super(MixLinear, self).__init__()
         self.layer_type = layer_type
+        self.kernel_size = kernel_size
         self.padding = padding
         self.in_features = in_features
         self.out_features = out_features
         # fine tuned
-        self.weight = Parameter(torch.Tensor(out_features, in_features))
+        if self.layer_type == "linear":
+            self.weight = Parameter(torch.Tensor(out_features, in_features))
+        elif self.layer_type == "conv2d":
+            self.weight = Parameter(
+                torch.Tensor(out_features, in_features, kernel_size[0], kernel_size[1])
+            )
         if bias:
             self.bias = Parameter(torch.Tensor(out_features))
         else:
