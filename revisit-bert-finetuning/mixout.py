@@ -158,9 +158,9 @@ class mixout_layer(nn.Module):
     ):
         super().__init__()
         if isinstance(linear, nn.Linear):
-            self.layer_type = 'linear'
+            self.layer_type = "linear"
         elif isinstance(linear, nn.modules.conv.Conv2d):
-            self.layer_type = 'conv2d'
+            self.layer_type = "conv2d"
         self.layer_mixout = layer_mixout
         self.frozen = frozen
         self.layer = linear
@@ -199,23 +199,23 @@ class mixout_layer(nn.Module):
                 return self.layer(x).to(self.device)
 
         x_shape = x.shape
-        if self.layer_type == 'linear':
+        if self.layer_type == "linear":
             x = torch.flatten(x, end_dim=-2)
         learned_layer_output = self.layer(x).to(self.device)
         frozen_layer_output = self.layer_frozen(x)
-        if self.layer_type == 'conv2d':
-            self.noise = torch.FloatTensor(x.shape[0],
+        if self.layer_type == "conv2d":
+            self.noise = torch.FloatTensor(
+                x.shape[0],
                 learned_layer_output.shape[-2],
-                learned_layer_output.shape[-1]).uniform_(
-                0, 1
-            )
+                learned_layer_output.shape[-1],
+            ).uniform_(0, 1)
         else:
-            self.noise = torch.FloatTensor(x.shape[0], self.layer.out_features).uniform_(
-                0, 1
-            )
+            self.noise = torch.FloatTensor(
+                x.shape[0], self.layer.out_features
+            ).uniform_(0, 1)
         self.mask = (self.noise < self.p).type(torch.FloatTensor).to(self.device)
-        if self.layer_type == 'conv2d':
-            self.mask = self.mask[:,None,:,:]
+        if self.layer_type == "conv2d":
+            self.mask = self.mask[:, None, :, :]
         self.masked_learned = learned_layer_output * (1 - self.mask)
         self.masked_frozen = frozen_layer_output * self.mask
         self.raw_output = self.masked_learned + self.masked_frozen
@@ -224,7 +224,9 @@ class mixout_layer(nn.Module):
         # self.denom_scale = self.normalize(
         #     self.raw_output, frozen_layer_output, keepdim=True, dim=[1])
         if self.norm_flag:
-            self.desired_norm = self.normalize(learned_layer_output, frozen_layer_output)
+            self.desired_norm = self.normalize(
+                learned_layer_output, frozen_layer_output
+            )
             self.raw_norm = self.normalize(
                 self.raw_output, frozen_layer_output, keepdim=True, dim=[1]
             )
@@ -232,13 +234,15 @@ class mixout_layer(nn.Module):
             epsilon = 0.1
             min_val = 1 / (1 + self.p) * (1 - epsilon)
             max_val = (1 + self.p) * (1 + epsilon)
-            multiplier = torch.clamp(self.desired_norm / self.raw_norm, min_val, max_val)
+            multiplier = torch.clamp(
+                self.desired_norm / self.raw_norm, min_val, max_val
+            )
             self.output = delta * multiplier + frozen_layer_output
-            if self.layer_type == 'linear':
+            if self.layer_type == "linear":
                 self.output = self.output.view(*x_shape[:-1], -1)
             return self.output
         else:
-            if self.layer_type == 'linear':
+            if self.layer_type == "linear":
                 return self.raw_output.view(*x_shape[:-1], -1)
             else:
                 return self.raw_output
@@ -265,8 +269,19 @@ class MixLinear(torch.nn.Module):
     # If you want to change a dropout layer to a mixout layer,
     # you should replace nn.Linear right after nn.Dropout(p) with Mixout(p)
 
-    def __init__(self, in_features, out_features, bias=True, target=None, p=0.0):
+    def __init__(
+        self,
+        in_features,
+        out_features,
+        bias=True,
+        target=None,
+        p=0.0,
+        layer_type="linear",
+        padding=0,
+    ):
         super(MixLinear, self).__init__()
+        self.layer_type = layer_type
+        self.padding = padding
         self.in_features = in_features
         self.out_features = out_features
         # fine tuned
@@ -288,9 +303,19 @@ class MixLinear(torch.nn.Module):
             init.uniform_(self.bias, -bound, bound)
 
     def forward(self, input):
-        return F.linear(
-            input, mixout(self.weight, self.target, self.p, self.training), self.bias
-        )
+        if self.layer_type == "linear":
+            return F.linear(
+                input,
+                mixout(self.weight, self.target, self.p, self.training),
+                self.bias,
+            )
+        elif self.layer_type == "conv2d":
+            return F.conv2d(
+                input,
+                mixout(self.weight, self.target, self.p, self.training),
+                self.bias,
+                padding=self.padding,
+            )
 
     def extra_repr(self):
         type = "drop" if self.target is None else "mix"
