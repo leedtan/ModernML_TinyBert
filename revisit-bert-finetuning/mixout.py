@@ -206,10 +206,15 @@ class mixout_layer(nn.Module):
     def forward(self, x):
         if isinstance(x, np.ndarray):
             x = torch.Tensor(x)
-        if self.frozen:
+        if self.frozen or self.p >= 1:
             return self.layer_frozen(x)
-        if not self.training or self.p == 0:
+        if self.p <= 0:
             return self.layer(x)
+        if not self.training:
+            if self.norm_flag:
+                return self.layer(x)
+            else:
+                return self.p * self.layer_frozen(x) + (1 - self.p) * self.layer(x)
         if self.layer_mixout:
             mixed = np.random.uniform() < self.p
             if mixed:
