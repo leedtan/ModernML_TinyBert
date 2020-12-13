@@ -6,6 +6,6 @@
     --gradient_accumulation_steps 4 --logging_steps 0 --num_loggings 10 \
     --save_steps 0 --test_val_split --use_torch_adamw --cache_dir /home/ubuntu/hf-transformers-cache \
     --num_train_epochs 3.0 --warmup_ratio 0.1 --learning_rate 2e-05 \
-    --output_dir tests/FULLTESTS/fourfourfour --all_datasets \
-    --reinit_pooler --normalize --mixout_layers 4 --reinit_layer 4 --mixout .3 \
+    --output_dir tests/FULLTESTS/classic --all_datasets \
+    --reinit_pooler --normalize --mixout_layers 12 --mixout .3 \
     --trials 10

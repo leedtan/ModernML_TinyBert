@@ -398,7 +398,7 @@ def train(args, train_dataset, model, tokenizer):
                     #     l2_reg_layer = 1e-2 * (1e-1 ** mix_depth)
                     l2_reg += module.regularize(3e-3)
             loss += l2_reg
-
+            raise ValueError('killing to check order')
             if args.fp16:
                 with amp.scale_loss(loss, optimizer) as scaled_loss:
                     scaled_loss.backward()
@@ -935,7 +935,7 @@ def main(args):
             raise NotImplementedError
 
     from mixout import MixLinear, mixout_layer
-
+    mix_counter = 0
     if args.reinit_layers > 0 or args.mixout_layers > 0:
         if args.model_type in ["bert", "roberta", "electra"]:
             # assert args.reinit_pooler or args.model_type == "electra"
@@ -979,7 +979,9 @@ def main(args):
                                     layer_mixout=args.layer_mixout,
                                     frozen=True,
                                     norm_flag=args.normalize,
+                                    name=str(mix_counter) + "_mix_layer",
                                 )
+                                mix_counter += 1
                             else:
                                 new_module = MixLinear(
                                     module.in_features,

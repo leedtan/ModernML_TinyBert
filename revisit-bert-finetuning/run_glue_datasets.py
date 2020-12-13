@@ -12,7 +12,7 @@ DATASETS = ['RTE','MRPC','CoLA','STS-B']
 def experiment(seeds):
   for seed in seeds:
     args.seed = seed
-    args.output_dir = output_dir + '_DATASET_' + args.task_name + "_SEED_" + str(seed)
+    args.output_dir = output_dir + '_DATASET_' + args.task_name.lower() + "_SEED_" + str(seed)
     run_glue_main(args)
 
 if __name__ == "__main__":

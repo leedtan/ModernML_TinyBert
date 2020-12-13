@@ -173,9 +173,10 @@ def mixout(
 
 class mixout_layer(nn.Module):
     def __init__(
-        self, linear, p, device=None, norm_flag=True, frozen=False, layer_mixout=False
+        self, linear, p, device=None, norm_flag=True, frozen=False, layer_mixout=False, name=None,
     ):
         super().__init__()
+        self.name = name
         if isinstance(linear, nn.Linear):
             self.layer_type = "linear"
         elif isinstance(linear, nn.modules.conv.Conv2d):
@@ -204,6 +205,7 @@ class mixout_layer(nn.Module):
         )"""
 
     def forward(self, x):
+        print(self.name)
         if isinstance(x, np.ndarray):
             x = torch.Tensor(x)
         if self.frozen or self.p >= 1:
