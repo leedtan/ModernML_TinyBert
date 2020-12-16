@@ -19,6 +19,7 @@ if __name__ == "__main__":
   # revisiting finetuned bert (https://arxiv.org/pdf/2006.05987.pdf) uses 20 random seeds
     seeds = range(args.trials)
     if not args.all_datasets:
+        args.data_dir = os.path.join(data_dir,args.task_name)
         experiment(seeds)
     else:
         for dataset in DATASETS:

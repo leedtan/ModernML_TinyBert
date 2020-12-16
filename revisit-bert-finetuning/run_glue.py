@@ -398,7 +398,6 @@ def train(args, train_dataset, model, tokenizer):
                     #     l2_reg_layer = 1e-2 * (1e-1 ** mix_depth)
                     l2_reg += module.regularize(3e-3)
             loss += l2_reg
-            raise ValueError('killing to check order')
             if args.fp16:
                 with amp.scale_loss(loss, optimizer) as scaled_loss:
                     scaled_loss.backward()
@@ -946,8 +945,8 @@ def main(args):
             mix_layers = args.mixout_layers
             num_frozen = 12 - (re_layers + mix_layers)
             layer_itr = 0
-            first_mixout_index = 12 * num_frozen
-            first_reinit_index = 12 * (12 - re_layers)
+            first_mixout_index = 1 + num_frozen * 12
+            first_reinit_index = 12 * (12 - re_layers) + 1
             dgblayers = [
                 [module for module in layer.modules()]
                 for layer in encoder_temp.encoder.layer
@@ -964,23 +963,30 @@ def main(args):
                                 if single_layer == module:
                                     pass
                                     # print("layer_group:", i, "within_group:", j)
-                        layer_itr += 1
+                        # output layer is the first linear layer we come across
+                        if layer_itr == 0:
+                            print('encoder_temp.config.initializer_range: ', encoder_temp.config.initializer_range)
+                            module.weight.data.normal_(mean=0.0, std=encoder_temp.config.initializer_range)
                         if (
                             layer_itr >= first_mixout_index
                             and layer_itr < first_reinit_index
                         ):
                             target_state_dict = module.state_dict()
                             bias = True if module.bias is not None else False
+                            mix_depth = (layer_itr - 1)//(args.mixout_layers)
+                            mix_depth = mix_depth/float(args.mixout_layers - 1)
+                            mix_percent = mix_depth * args.mixout + (1 - mix_depth) * args.mixout_decay
                             if 1:
                                 new_module = mixout_layer(
                                     module,
-                                    args.mixout,
+                                    mix_percent if args.mixout_decay > 0.0 else args.mixout,
                                     args.device,
                                     layer_mixout=args.layer_mixout,
                                     frozen=True,
                                     norm_flag=args.normalize,
                                     name=str(mix_counter) + "_mix_layer",
                                 )
+                                print(new_module)
                                 mix_counter += 1
                             else:
                                 new_module = MixLinear(
@@ -992,6 +998,7 @@ def main(args):
                                 )
                                 new_module.load_state_dict(target_state_dict)
                             setattr(sup_module, name, new_module)
+                        layer_itr += 1
                     if isinstance(module, nn.Dropout):
                         module.p = 0.0
             if args.reinit_layers > 0:
@@ -1003,6 +1010,7 @@ def main(args):
                             module.weight.data.normal_(
                                 mean=0.0, std=encoder_temp.config.initializer_range
                             )
+                            module.weight.data.zero_()
                         elif isinstance(module, BertLayerNorm):
                             module.bias.data.zero_()
                             module.weight.data.fill_(1.0)

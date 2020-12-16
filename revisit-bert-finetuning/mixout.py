@@ -205,7 +205,6 @@ class mixout_layer(nn.Module):
         )"""
 
     def forward(self, x):
-        print(self.name)
         if isinstance(x, np.ndarray):
             x = torch.Tensor(x)
         if self.frozen or self.p >= 1:

@@ -276,6 +276,9 @@ def get_parser():
         "--mixout", type=float, default=0.0, help="mixout probability (default: 0)"
     )
     parser.add_argument(
+        "--mixout_decay", type=float, default=1.0, help="mixout decay starting from"
+    )
+    parser.add_argument(
         "--trials", type=int, default=20, help="number of experiments with different random seeds"
     )
     parser.add_argument(
