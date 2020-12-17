@@ -330,7 +330,7 @@ def train(args, train_dataset, model, tokenizer):
     # pretrained_model = copy.deepcopy(model)
     # pretrained_model.eval()
     for module in list(model.modules()):
-        if hasattr(module, 'is_our_mixout'):
+        if hasattr(module, "is_our_mixout"):
             test_mix = module
             break
     print(module)
@@ -341,9 +341,9 @@ def train(args, train_dataset, model, tokenizer):
         )
         mix_counter = 0
         if args.unfreeze_after_epoch == epoch_counter:
-            print('\n unfreezing mixout layers \n')
+            print("\n unfreezing mixout layers \n")
         for module in list(model.modules()):
-            if hasattr(module, 'is_our_mixout'):
+            if hasattr(module, "is_our_mixout"):
                 if args.unfreeze_after_epoch == epoch_counter:
                     module.frozen = False
         for step, batch in enumerate(epoch_iterator):
@@ -388,15 +388,18 @@ def train(args, train_dataset, model, tokenizer):
             # #print(loss, l2_reg)
             n_frozen = 4
             layer_itr = 0
+            total_mix_layers = args.mixout_layers * 12
             for sup_module in list(model.modules()):
                 if hasattr(module, "is_our_mixout"):
-                    # layer_itr += 1
-                    # if layer_itr < (12 * n_frozen):
-                    #     l2_reg_layer = 1e-2
-                    # else:
-                    #     mix_depth = (layer_itr - 124) / 124
-                    #     l2_reg_layer = 1e-2 * (1e-1 ** mix_depth)
-                    l2_reg += module.regularize(3e-3)
+                    if args.l2_scaling:
+                        mix_depth = layer_itr / total_mix_layers
+                        l2_reg_layer = 1e-2 * (1e-1 ** mix_depth)
+                        l2_reg += module.regularize(l2_reg_layer)
+                        print(l2_reg_layer)
+                        layer_itr += 1
+                    else:
+                        l2_reg += module.regularize(3e-3)
+
             loss += l2_reg
             if args.fp16:
                 with amp.scale_loss(loss, optimizer) as scaled_loss:
@@ -553,7 +556,7 @@ def train(args, train_dataset, model, tokenizer):
         if args.max_steps > 0 and global_step > args.max_steps:
             train_iterator.close()
             break
-            
+
     args.resplit_val = 0  # test on the original test_set
     eval_task_names = (args.task_name,)
 

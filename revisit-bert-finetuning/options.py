@@ -263,6 +263,9 @@ def get_parser():
         "--reinit_pooler", action="store_true", help="reinitialize the pooler",
     )
     parser.add_argument(
+        "--l2_scaling", action="store_true", help="reinitialize the pooler",
+    )
+    parser.add_argument(
         "--normalize", action="store_true", help="normalize the mixout layers",
     )
     parser.add_argument(
