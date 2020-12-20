@@ -222,7 +222,6 @@ class mixout_layer(nn.Module):
                 return self.layer_frozen(x)
             else:
                 return self.layer(x).to(self.device)
-        pdb.set_trace()
         x_shape = x.shape
         if self.layer_type == "linear":
             x = torch.flatten(x, end_dim=-2)
