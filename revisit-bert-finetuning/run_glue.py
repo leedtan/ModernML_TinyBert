@@ -255,6 +255,7 @@ def train(args, train_dataset, model, tokenizer):
             raise ImportError(
                 "Please install apex from https://www.github.com/nvidia/apex to use fp16 training."
             )
+        print('USING FP16')
         model, optimizer = amp.initialize(
             model, optimizer, opt_level=args.fp16_opt_level
         )
@@ -333,7 +334,7 @@ def train(args, train_dataset, model, tokenizer):
         if hasattr(module, "is_our_mixout"):
             test_mix = module
             break
-    print(module)
+    # print(module)
     epoch_counter = 0
     for _ in train_iterator:
         epoch_iterator = tqdm(
@@ -969,7 +970,6 @@ def main(args):
                                     pass
                                     # print("layer_group:", i, "within_group:", j)
                         # output layer is the first linear layer we come across
-                        print(1)
                         if layer_itr == 0:
                             print(
                                 "encoder_temp.config.initializer_range: ",
@@ -1002,7 +1002,6 @@ def main(args):
                                     norm_flag=args.normalize,
                                     name=str(mix_counter) + "_mix_layer",
                                 )
-                                print(new_module)
                                 mix_counter += 1
                             else:
                                 new_module = MixLinear(
@@ -1110,9 +1109,6 @@ def main(args):
     #                     )
     #                     new_module.load_state_dict(target_state_dict)
     #                 setattr(sup_module, name, new_module)
-    # print(model)
-    # print("num layers mixout:", layer_itr)
-    # prints 146
 
     model.to(args.device)
 
