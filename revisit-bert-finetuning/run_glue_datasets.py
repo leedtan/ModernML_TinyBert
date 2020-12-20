@@ -8,6 +8,7 @@ output_dir = args.output_dir
 data_dir = args.data_dir
 
 DATASETS = ['RTE','MRPC','CoLA','STS-B']
+DATASETS = ['RTE','MRPC','STS-B']
 
 def experiment(seeds):
   for seed in seeds:
