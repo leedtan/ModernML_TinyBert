@@ -275,7 +275,7 @@ def get_parser():
         "--reinit_pooler", action="store_true", help="reinitialize the pooler",
     )
     parser.add_argument(
-        "--l2_scaling", action="store_true", help="reinitialize the pooler",
+        "--l2_scaling", action="store_true", help="",
     )
     parser.add_argument(
         "--normalize", action="store_true", help="normalize the mixout layers",
@@ -284,7 +284,7 @@ def get_parser():
         "--all_datasets", action="store_true", help="run for all datasets",
     )
     parser.add_argument(
-        "--layer_mixout", action="store_true", help="reinitialize the pooler",
+        "--layer_mixout", action="store_true", help="",
     )
     parser.add_argument("--rezero_layers", type=int, default=0, help="re-zero layers")
     parser.add_argument(

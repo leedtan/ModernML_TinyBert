@@ -291,7 +291,7 @@ def run_train(args, train_dataset, model, tokenizer, logger):
                             l2_reg += module.regularize(l2_reg_layer)
                             layer_itr += 1
                         else:
-                            l2_reg += module.regularize()
+                            l2_reg += module.regularize(args.l2_reg_mult)
 
             loss += l2_reg
             if args.fp16:
