@@ -61,47 +61,49 @@ def manipulate_model(
     mix_counter = 0
     for sup_module in list(model.modules()):
         for name, module in sup_module.named_children():
-            if layer_itr == 0:
-                module.weight.data.normal_(
-                    mean=0.0, std=encoder_temp.config.initializer_range
-                )
-            # Frozen
-            if layer_itr >= first_frozen_index and layer_itr < first_mixout_index:
-                for param in module.parameters():
-                    param.requires_grad = False
-            # Mixout
-            if layer_itr >= first_mixout_index and layer_itr < first_reinit_index:
-                target_state_dict = module.state_dict()
-                bias = True if module.bias is not None else False
-                mix_depth = (layer_itr - 1) // (args.mixout_layers)
-                mix_depth = mix_depth / float(args.mixout_layers - 1)
-                mix_percent = (
-                    mix_depth * args.mixout + (1 - mix_depth) * args.mixout_decay
-                )
-                if 1:
-                    new_module = mixout_layer(
-                        module,
-                        mix_percent if args.mixout_decay > 0.0 else args.mixout,
-                        args.device,
-                        layer_mixout=args.layer_mixout,
-                        frozen=True,
-                        norm_flag=args.normalize,
-                        name=str(mix_counter) + "_mix_layer",
+            if isinstance(module, nn.Linear):
+                if layer_itr == 0:
+                    module.weight.data.normal_(
+                        mean=0.0, std=encoder_temp.config.initializer_range
                     )
-                    mix_counter += 1
-                else:
-                    new_module = MixLinear(
-                        module.in_features,
-                        module.out_features,
-                        bias,
-                        target_state_dict["weight"],
-                        args.mixout,
+                # Frozen
+                if layer_itr >= first_frozen_index and layer_itr < first_mixout_index:
+                    for param in module.parameters():
+                        param.requires_grad = False
+                # Mixout
+                if layer_itr >= first_mixout_index and layer_itr < first_reinit_index:
+                    target_state_dict = module.state_dict()
+                    bias = True if module.bias is not None else False
+                    mix_depth = (layer_itr - 1) // (args.mixout_layers)
+                    mix_depth = mix_depth / float(args.mixout_layers - 1)
+                    mix_percent = (
+                        mix_depth * args.mixout + (1 - mix_depth) * args.mixout_decay
                     )
-                    new_module.load_state_dict(target_state_dict)
-                setattr(sup_module, name, new_module)
-            # Reinit (do nothing):
+                    if 1:
+                        new_module = mixout_layer(
+                            module,
+                            mix_percent if args.mixout_decay > 0.0 else args.mixout,
+                            args.device,
+                            layer_mixout=args.layer_mixout,
+                            frozen=True,
+                            norm_flag=args.normalize,
+                            name=str(mix_counter) + "_mix_layer",
+                        )
+                        mix_counter += 1
+                    else:
+                        new_module = MixLinear(
+                            module.in_features,
+                            module.out_features,
+                            bias,
+                            target_state_dict["weight"],
+                            args.mixout,
+                        )
+                        new_module.load_state_dict(target_state_dict)
+                    setattr(sup_module, name, new_module)
 
-            layer_itr += 1
+                # Reinit (do nothing):
+
+                layer_itr += 1
             if isinstance(module, nn.Dropout):
                 module.p = 0.0
 
