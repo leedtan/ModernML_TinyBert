@@ -7,6 +7,15 @@ args = parser.parse_args()
 output_dir = args.output_dir
 data_dir = args.data_dir
 
+base_name = 
+    parser.add_argument(
+        "--l2_reg_mult", type=float, default=3e-3, help="l2 reg for mixout"
+    )
+    parser.add_argument(
+        "--l2_reg_decay", type=float, default=1.0, help="decay for l2 reg"
+    )
+    learning_rate
+
 DATASETS = ['RTE','MRPC','CoLA','STS-B']
 DATASETS = ['RTE','MRPC','STS-B']
 

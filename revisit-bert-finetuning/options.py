@@ -242,16 +242,28 @@ def get_parser():
         help="Whether to get the (simulated) test accuracy.",
     )
     parser.add_argument(
-        "--reinit_layers",
+        "--frozen_layers",
         type=int,
         default=0,
-        help="re-initialize the last N Transformer blocks. reinit_pooler must be turned on.",
+        help="mixout layers before reinit layers after frozen layers",
     )
     parser.add_argument(
         "--mixout_layers",
         type=int,
         default=0,
         help="mixout layers before reinit layers after frozen layers",
+    )
+    parser.add_argument(
+        "--finetune_layers",
+        type=int,
+        default=0,
+        help="mixout layers before reinit layers after frozen layers",
+    )
+    parser.add_argument(
+        "--reinit_layers",
+        type=int,
+        default=0,
+        help="re-initialize the last N Transformer blocks. reinit_pooler must be turned on.",
     )
     parser.add_argument(
         "--unfreeze_after_epoch",
@@ -279,10 +291,19 @@ def get_parser():
         "--mixout", type=float, default=0.0, help="mixout probability (default: 0)"
     )
     parser.add_argument(
+        "--l2_reg_mult", type=float, default=3e-3, help="l2 reg for mixout"
+    )
+    parser.add_argument(
+        "--l2_reg_decay", type=float, default=1.0, help="decay for l2 reg"
+    )
+    parser.add_argument(
         "--mixout_decay", type=float, default=1.0, help="mixout decay starting from"
     )
     parser.add_argument(
-        "--trials", type=int, default=20, help="number of experiments with different random seeds"
+        "--trials",
+        type=int,
+        default=20,
+        help="number of experiments with different random seeds",
     )
     parser.add_argument(
         "--prior_weight_decay",
