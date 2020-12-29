@@ -498,4 +498,4 @@ def run_train(args, train_dataset, model, tokenizer, logger):
         f.write(",".join(["test_" + k for k in result.keys()]) + "\n")
         f.write(",".join([f"{v:.4f}" for v in result.values()]))
 
-    return global_step, tr_loss / global_step
+    return global_step, tr_loss / global_step, result

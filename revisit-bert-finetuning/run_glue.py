@@ -282,14 +282,15 @@ def main(args):
         train_dataset = load_and_cache_examples(
             args, args.task_name, tokenizer, evaluate=False, logger=logger
         )
-        global_step, tr_loss = run_train(args, train_dataset, model, tokenizer, logger)
+        global_step, tr_loss, result = run_train(args, train_dataset, model, tokenizer, logger)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
     # Saving best-practices: if you use defaults names for the model, you can reload it using from_pretrained()
     if args.do_train and (args.local_rank == -1 or torch.distributed.get_rank() == 0):
         logger.info("Saving model checkpoint to %s", args.output_dir)
-        torch.save(args, os.path.join(args.output_dir, "training_args.bin"))
-
+        # torch.save(args, os.path.join(args.output_dir, "training_args.bin"))
+    
+    return result
 
 if __name__ == "__main__":
     parser = get_parser()
