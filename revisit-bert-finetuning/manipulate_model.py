@@ -71,7 +71,7 @@ def manipulate_model(
                     for param in module.parameters():
                         param.requires_grad = False
                 # Mixout
-                if layer_itr >= first_mixout_index and layer_itr < first_reinit_index:
+                if layer_itr >= first_mixout_index and layer_itr < first_finetune_index:
                     target_state_dict = module.state_dict()
                     bias = True if module.bias is not None else False
                     mix_depth = (layer_itr - 1) // (args.mixout_layers)
