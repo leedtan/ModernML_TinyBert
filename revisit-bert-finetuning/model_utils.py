@@ -43,6 +43,7 @@ def check_config(args, logger):
     args.task_name = args.task_name.lower()
     if args.task_name not in processors:
         raise ValueError("Task not found: %s" % (args.task_name))
+    return args
 
 
 def check_output_dir(output_dir):
