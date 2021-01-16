@@ -13,6 +13,18 @@ def manipulate_model(
     first_reinit_index,
     args,
 ):
+    encoder_temp = getattr(model, args.model_type)
+    frozen_layers = args.frozen_layers
+    mix_layers = args.mixout_layers
+    finetune_layers = args.finetune_layers
+    re_layers = args.reinit_layers
+    first_frozen_index = 1
+    first_mixout_index = 1 + frozen_layers * 12
+    first_finetune_index = 1 + (frozen_layers + mix_layers) * 12
+    12 * (12 - re_layers) + 1
+    assert (12 * (12 - re_layers) + 1) == (
+        1 + (frozen_layers + mix_layers + finetune_layers) * 12
+    )
     layer_itr = 0
     mix_counter = 0
     for sup_module in list(model.modules()):

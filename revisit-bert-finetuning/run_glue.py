@@ -1,5 +1,4 @@
 import logging
-import os
 
 import torch
 import torch.nn as nn
@@ -79,18 +78,6 @@ def main(args):
 
     if args.reinit_layers > 0 or args.mixout_layers > 0:
 
-        encoder_temp = getattr(model, args.model_type)
-        frozen_layers = args.frozen_layers
-        mix_layers = args.mixout_layers
-        finetune_layers = args.finetune_layers
-        re_layers = args.reinit_layers
-        first_frozen_index = 1
-        first_mixout_index = 1 + frozen_layers * 12
-        first_finetune_index = 1 + (frozen_layers + mix_layers) * 12
-        first_reinit_index = 12 * (12 - re_layers) + 1
-        assert (12 * (12 - re_layers) + 1) == (
-            1 + (frozen_layers + mix_layers + finetune_layers) * 12
-        )
         manipulate_model(
             model,
             encoder_temp,
@@ -105,7 +92,6 @@ def main(args):
 
     logger.info("Training/evaluation parameters %s", args)
 
-    # Training
     if args.do_train:
         train_dataset = load_and_cache_examples(
             args, args.task_name, tokenizer, evaluate=False, logger=logger
@@ -119,7 +105,6 @@ def main(args):
     # reload it using from_pretrained()
     if args.do_train and (args.local_rank == -1 or torch.distributed.get_rank() == 0):
         logger.info("Saving model checkpoint to %s", args.output_dir)
-        # torch.save(args, os.path.join(args.output_dir, "training_args.bin"))
 
     return result
 
