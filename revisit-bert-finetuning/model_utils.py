@@ -2,6 +2,7 @@ import logging
 import os
 
 import torch
+from transformers import glue_processors as processors
 
 
 def check_config(args, logger):
