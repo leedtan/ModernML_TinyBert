@@ -2,7 +2,8 @@ import logging
 
 import torch
 import torch.nn as nn
-from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
+from transformers import (AutoConfig, AutoModelForSequenceClassification,
+                          AutoTokenizer)
 from transformers import glue_output_modes as output_modes
 from transformers import glue_processors as processors
 
@@ -81,10 +82,6 @@ def main(args):
         manipulate_model(
             model,
             encoder_temp,
-            first_frozen_index,
-            first_mixout_index,
-            first_finetune_index,
-            first_reinit_index,
             args,
         )
 

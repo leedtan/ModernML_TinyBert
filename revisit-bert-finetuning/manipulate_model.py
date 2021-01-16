@@ -7,10 +7,6 @@ from mixout import MixLinear, mixout_layer
 def manipulate_model(
     model,
     encoder_temp,
-    first_frozen_index,
-    first_mixout_index,
-    first_finetune_index,
-    first_reinit_index,
     args,
 ):
     encoder_temp = getattr(model, args.model_type)
