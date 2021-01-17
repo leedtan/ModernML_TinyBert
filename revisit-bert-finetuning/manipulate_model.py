@@ -9,6 +9,7 @@ def manipulate_model(
     encoder_temp,
     args,
 ):
+    pdb.set_trace()
     encoder_temp = getattr(model, args.model_type)
     frozen_layers = args.frozen_layers
     mix_layers = args.mixout_layers
