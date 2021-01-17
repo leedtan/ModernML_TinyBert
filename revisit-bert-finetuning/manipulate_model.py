@@ -1,5 +1,3 @@
-import pdb
-
 import torch.nn as nn
 from transformers.modeling_bert import BertLayerNorm
 
@@ -10,7 +8,6 @@ def manipulate_model(
     model,
     args,
 ):
-    pdb.set_trace()
     encoder_temp = getattr(model, args.model_type)
     frozen_layers = args.frozen_layers
     mix_layers = args.mixout_layers
