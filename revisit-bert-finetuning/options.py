@@ -308,7 +308,7 @@ def get_parser():
         "--l2_reg_decay", type=float, default=1.0, help="decay for l2 reg"
     )
     parser.add_argument(
-        "--mixout_decay", type=float, default=1.0, help="mixout decay starting from"
+        "--mixout_decay", type=float, default=0.0, help="mixout decay starting from"
     )
     parser.add_argument(
         "--trials",

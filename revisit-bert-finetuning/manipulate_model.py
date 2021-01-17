@@ -8,7 +8,6 @@ from mixout import MixLinear, mixout_layer
 
 def manipulate_model(
     model,
-    encoder_temp,
     args,
 ):
     pdb.set_trace()
@@ -49,7 +48,9 @@ def manipulate_model(
                     if 1:
                         new_module = mixout_layer(
                             module,
-                            mix_percent if args.mixout_decay > 0.0 else args.mixout,
+                            mix_percent
+                            if args.mixout_decay > 0.0 and args.mixout_decay < 1.0
+                            else args.mixout,
                             args.device,
                             layer_mixout=args.layer_mixout,
                             frozen=True,
