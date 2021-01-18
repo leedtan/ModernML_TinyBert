@@ -54,6 +54,12 @@ def evaluate(args, model, tokenizer, prefix="", eval_datasets=None, logger=None)
                     "attention_mask": batch[1],
                     "labels": batch[3],
                 }
+                if args.model_type not in {"distilbert", "bart"}:
+                    inputs["token_type_ids"] = (
+                        batch[2]
+                        if args.model_type in ["bert", "xlnet", "albert"]
+                        else None
+                    )  # XLM, DistilBERT, RoBERTa, and XLM-RoBERTa don't use segment_ids
                 outputs = model(**inputs)
                 tmp_eval_loss, logits = outputs[:2]
 

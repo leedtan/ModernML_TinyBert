@@ -67,7 +67,6 @@ def manipulate_model(
                     setattr(sup_module, name, new_module)
 
                 # Reinit (do nothing):
-
                 layer_itr += 1
             if isinstance(module, nn.Dropout):
                 module.p = 0.0
