@@ -1,6 +1,4 @@
-import torch
 import torch.nn as nn
-import transformers
 from transformers.modeling_electra import ElectraPreTrainedModel, ElectraModel
 from torch.nn import CrossEntropyLoss, MSELoss
 

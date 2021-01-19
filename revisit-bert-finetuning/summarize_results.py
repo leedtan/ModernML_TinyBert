@@ -1,6 +1,5 @@
 import sys
 import os
-import pdb
 import pandas as pd
 args = sys.argv[1:]
 directory = args[0]

@@ -1,54 +1,30 @@
-import pdb
-import copy
-import argparse
-import glob
-import json
 import logging
 import os
-import random
-import re
-from collections import defaultdict
 from manipulate_model import manipulate_model
 from glue_utils import (
     set_seed,
     load_and_cache_examples,
 )
 
-import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset
-from torch.utils.data.distributed import DistributedSampler
-from tqdm import tqdm, trange
-from torch.optim import Adam
 from options import get_parser
 from model_utils import ElectraForSequenceClassification
 from train import run_train
-from validate import evaluate
 from transformers import (
-    WEIGHTS_NAME,
-    AdamW,
     AutoConfig,
     AutoModelForSequenceClassification,
     AutoTokenizer,
-    get_linear_schedule_with_warmup,
-    get_constant_schedule_with_warmup,
-    get_cosine_schedule_with_warmup,
 )
 
-from transformers import glue_compute_metrics as compute_metrics
-from transformers import (
-    glue_convert_examples_to_features as convert_examples_to_features,
-)
 from transformers import glue_output_modes as output_modes
 from transformers import glue_processors as processors
 
 try:
-    from torch.utils.tensorboard import SummaryWriter
+    pass
 except ImportError:
-    from tensorboardX import SummaryWriter
+    pass
 
-from prior_wd_optim import PriorWD
 
 logger = logging.getLogger(__name__)
 
@@ -213,7 +189,6 @@ def main(args):
             mix_layers = args.mixout_layers
             finetune_layers = args.finetune_layers
             re_layers = args.reinit_layers
-            layer_itr = 0
             first_frozen_index = 1
             first_mixout_index = 1 + frozen_layers * 12
             first_finetune_index = 1 + (frozen_layers + mix_layers) * 12

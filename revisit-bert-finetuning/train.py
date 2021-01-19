@@ -1,12 +1,4 @@
-import pdb
-import copy
-import argparse
-import glob
-import json
-import logging
 import os
-import random
-import re
 from collections import defaultdict
 from glue_utils import (
     load_and_cache_examples,
@@ -15,36 +7,20 @@ from glue_utils import (
 )
 import numpy as np
 import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset
+from torch.utils.data import DataLoader, RandomSampler
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
-from torch.optim import Adam
-from options import get_parser
-from model_utils import ElectraForSequenceClassification
 from validate import evaluate
 from transformers import (
-    WEIGHTS_NAME,
     AdamW,
-    AutoConfig,
-    AutoModelForSequenceClassification,
-    AutoTokenizer,
     get_linear_schedule_with_warmup,
-    get_constant_schedule_with_warmup,
-    get_cosine_schedule_with_warmup,
 )
 
-from transformers import glue_compute_metrics as compute_metrics
-from transformers import (
-    glue_convert_examples_to_features as convert_examples_to_features,
-)
-from transformers import glue_output_modes as output_modes
-from transformers import glue_processors as processors
 
 try:
-    from torch.utils.tensorboard import SummaryWriter
+    pass
 except ImportError:
-    from tensorboardX import SummaryWriter
+    pass
 
 from prior_wd_optim import PriorWD
 
@@ -236,7 +212,6 @@ def run_train(args, train_dataset, model, tokenizer, logger):
     # pretrained_model.eval()
     for module in list(model.modules()):
         if hasattr(module, "is_our_mixout"):
-            test_mix = module
             break
     # print(module)
     epoch_counter = 0
@@ -277,7 +252,6 @@ def run_train(args, train_dataset, model, tokenizer, logger):
                 loss = loss / args.gradient_accumulation_steps
 
             l2_reg = 0
-            n_frozen = 4
             layer_itr = 0
             total_mix_layers = args.mixout_layers * 12
             for sup_module in list(model.modules()):

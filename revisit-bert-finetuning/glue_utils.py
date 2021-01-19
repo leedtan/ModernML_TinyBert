@@ -1,35 +1,11 @@
-import pdb
-import copy
-import argparse
-import glob
-import json
-import logging
 import os
 import random
-import re
 from collections import defaultdict
 
 import numpy as np
 import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset
-from torch.utils.data.distributed import DistributedSampler
-from tqdm import tqdm, trange
-from torch.optim import Adam
-from options import get_parser
-from model_utils import ElectraForSequenceClassification
-from transformers import (
-    WEIGHTS_NAME,
-    AdamW,
-    AutoConfig,
-    AutoModelForSequenceClassification,
-    AutoTokenizer,
-    get_linear_schedule_with_warmup,
-    get_constant_schedule_with_warmup,
-    get_cosine_schedule_with_warmup,
-)
+from torch.utils.data import TensorDataset
 
-from transformers import glue_compute_metrics as compute_metrics
 from transformers import (
     glue_convert_examples_to_features as convert_examples_to_features,
 )
@@ -37,11 +13,10 @@ from transformers import glue_output_modes as output_modes
 from transformers import glue_processors as processors
 
 try:
-    from torch.utils.tensorboard import SummaryWriter
+    pass
 except ImportError:
-    from tensorboardX import SummaryWriter
+    pass
 
-from prior_wd_optim import PriorWD
 
 
 def get_optimizer_grouped_parameters(args, model):
@@ -81,7 +56,7 @@ def get_optimizer_grouped_parameters(args, model):
         ]
 
         if args.model_type in ["bert", "roberta", "electra"]:
-            num_layers = model.config.num_hidden_layers
+            model.config.num_hidden_layers
             layers = [getattr(model, args.model_type).embeddings] + list(
                 getattr(model, args.model_type).encoder.layer
             )
