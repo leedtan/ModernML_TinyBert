@@ -1,24 +1,18 @@
 import logging
 import os
-from manipulate_model import manipulate_model
-from glue_utils import (
-    set_seed,
-    load_and_cache_examples,
-)
 
 import torch
 import torch.nn as nn
-from options import get_parser
-from model_utils import ElectraForSequenceClassification
-from train import run_train
-from transformers import (
-    AutoConfig,
-    AutoModelForSequenceClassification,
-    AutoTokenizer,
-)
-
+from transformers import (AutoConfig, AutoModelForSequenceClassification,
+                          AutoTokenizer)
 from transformers import glue_output_modes as output_modes
 from transformers import glue_processors as processors
+
+from glue_utils import load_and_cache_examples, set_seed
+from manipulate_model import manipulate_model
+from model_utils import ElectraForSequenceClassification
+from options import get_parser
+from train import run_train
 
 try:
     pass
@@ -207,10 +201,8 @@ def main(args):
             )
 
         elif args.model_type == "xlnet":
-            from transformers.modeling_xlnet import (
-                XLNetLayerNorm,
-                XLNetRelativeAttention,
-            )
+            from transformers.modeling_xlnet import (XLNetLayerNorm,
+                                                     XLNetRelativeAttention)
 
             for layer in model.transformer.layer[-args.reinit_layers :]:
                 for module in layer.modules():
@@ -257,15 +249,18 @@ def main(args):
         train_dataset = load_and_cache_examples(
             args, args.task_name, tokenizer, evaluate=False, logger=logger
         )
-        global_step, tr_loss, result = run_train(args, train_dataset, model, tokenizer, logger)
+        global_step, tr_loss, result = run_train(
+            args, train_dataset, model, tokenizer, logger
+        )
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
     # Saving best-practices: if you use defaults names for the model, you can reload it using from_pretrained()
     if args.do_train and (args.local_rank == -1 or torch.distributed.get_rank() == 0):
         logger.info("Saving model checkpoint to %s", args.output_dir)
         # torch.save(args, os.path.join(args.output_dir, "training_args.bin"))
-    
+
     return result
+
 
 if __name__ == "__main__":
     parser = get_parser()

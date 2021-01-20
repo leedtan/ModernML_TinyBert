@@ -1,5 +1,5 @@
-from run_glue import main as run_glue_main
 from options import get_parser
+from run_glue import main as run_glue_main
 
 parser = get_parser()
 args = parser.parse_args()

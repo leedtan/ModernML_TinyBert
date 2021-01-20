@@ -5,7 +5,6 @@ from collections import defaultdict
 import numpy as np
 import torch
 from torch.utils.data import TensorDataset
-
 from transformers import (
     glue_convert_examples_to_features as convert_examples_to_features,
 )
@@ -16,7 +15,6 @@ try:
     pass
 except ImportError:
     pass
-
 
 
 def get_optimizer_grouped_parameters(args, model):

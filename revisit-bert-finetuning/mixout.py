@@ -5,17 +5,17 @@
 # Implementation of mixout from https://arxiv.org/abs/1909.11299
 ## "Mixout: Effective Regularization to Finetune Large-scale Pretrained Language Models"
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+import copy
 import math
+import pdb
+
+import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.init as init
 import torch.nn.functional as F
-
-from torch.nn import Parameter
+import torch.nn.init as init
 from torch.autograd.function import InplaceFunction
-import pdb
-import numpy as np
-import copy
+from torch.nn import Parameter
 
 torch.autograd.set_detect_anomaly(True)
 
@@ -173,7 +173,14 @@ def mixout(
 
 class mixout_layer(nn.Module):
     def __init__(
-        self, linear, p, device=None, norm_flag=True, frozen=False, layer_mixout=False, name=None,
+        self,
+        linear,
+        p,
+        device=None,
+        norm_flag=True,
+        frozen=False,
+        layer_mixout=False,
+        name=None,
     ):
         super().__init__()
         self.name = name
@@ -357,4 +364,3 @@ class MixLinear(torch.nn.Module):
             self.out_features,
             self.bias is not None,
         )
-

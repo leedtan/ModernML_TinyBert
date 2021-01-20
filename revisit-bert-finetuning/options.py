@@ -1,4 +1,5 @@
 import argparse
+
 from transformers import MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING
 from transformers import glue_processors as processors
 
@@ -272,19 +273,29 @@ def get_parser():
         help="freeze mixout operation until the given epoch. Defaults to unfreezing at the beginning.",
     )
     parser.add_argument(
-        "--reinit_pooler", action="store_true", help="reinitialize the pooler",
+        "--reinit_pooler",
+        action="store_true",
+        help="reinitialize the pooler",
     )
     parser.add_argument(
-        "--l2_scaling", action="store_true", help="",
+        "--l2_scaling",
+        action="store_true",
+        help="",
     )
     parser.add_argument(
-        "--normalize", action="store_true", help="normalize the mixout layers",
+        "--normalize",
+        action="store_true",
+        help="normalize the mixout layers",
     )
     parser.add_argument(
-        "--all_datasets", action="store_true", help="run for all datasets",
+        "--all_datasets",
+        action="store_true",
+        help="run for all datasets",
     )
     parser.add_argument(
-        "--layer_mixout", action="store_true", help="",
+        "--layer_mixout",
+        action="store_true",
+        help="",
     )
     parser.add_argument("--rezero_layers", type=int, default=0, help="re-zero layers")
     parser.add_argument(

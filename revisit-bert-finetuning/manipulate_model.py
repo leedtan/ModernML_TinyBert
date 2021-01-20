@@ -1,6 +1,4 @@
-
 import torch.nn as nn
-
 
 try:
     pass
@@ -8,8 +6,8 @@ except ImportError:
     pass
 
 
-
 from transformers.modeling_bert import BertLayerNorm
+
 from mixout import MixLinear, mixout_layer
 
 

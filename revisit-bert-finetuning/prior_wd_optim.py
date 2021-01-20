@@ -26,10 +26,13 @@ class PriorWD(Optimizer):
             for i, group in enumerate(self.param_groups):
                 for p in group["params"]:
                     if self.exclude_last_group and i == len(self.param_groups):
-                        p.data.add_(-group["lr"] * self.weight_decay_by_group[i], p.data)
+                        p.data.add_(
+                            -group["lr"] * self.weight_decay_by_group[i], p.data
+                        )
                     else:
                         p.data.add_(
-                            -group["lr"] * self.weight_decay_by_group[i], p.data - self.prior_params[id(p)],
+                            -group["lr"] * self.weight_decay_by_group[i],
+                            p.data - self.prior_params[id(p)],
                         )
         loss = self.optim.step(closure)
 

@@ -1,21 +1,19 @@
 import os
 from collections import defaultdict
-from glue_utils import (
-    load_and_cache_examples,
-    get_optimizer_grouped_parameters,
-    set_seed,
-)
+
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, RandomSampler
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
-from validate import evaluate
-from transformers import (
-    AdamW,
-    get_linear_schedule_with_warmup,
-)
+from transformers import AdamW, get_linear_schedule_with_warmup
 
+from glue_utils import (
+    get_optimizer_grouped_parameters,
+    load_and_cache_examples,
+    set_seed,
+)
+from validate import evaluate
 
 try:
     pass

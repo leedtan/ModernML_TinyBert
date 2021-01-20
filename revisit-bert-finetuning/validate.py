@@ -1,11 +1,11 @@
 import os
-from glue_utils import load_and_cache_examples
 
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, SequentialSampler
-
 from transformers import glue_compute_metrics as compute_metrics
+
+from glue_utils import load_and_cache_examples
 
 try:
     pass
