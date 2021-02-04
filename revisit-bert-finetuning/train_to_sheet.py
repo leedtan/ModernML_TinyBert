@@ -174,8 +174,8 @@ args = {
     "l2_scaling": 0,
 }
 
-args["mixout_layers"] = 6
-args["finetune_layers"] = 0
+args["mixout_layers"] = 0
+args["finetune_layers"] = 6
 args["reinit_layers"] = 6
 args["l2_reg_decay"] = 1
 args["l2_reg_mult"] = 1e-2
