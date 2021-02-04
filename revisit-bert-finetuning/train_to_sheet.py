@@ -310,7 +310,7 @@ for name, default_val in zip(
 ):
     if name not in args:
         args[name] = default_val
-
+print(args)
 import os
 
 from options import get_parser
