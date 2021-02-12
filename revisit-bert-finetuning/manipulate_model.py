@@ -43,6 +43,7 @@ def manipulate_model(
                         mix_depth * args.mixout + (1 - mix_depth) * args.mixout_decay
                     )
                     if args.newmixout:
+                        print('using new mixout')
                         new_module = mixout_layer(
                             module,
                             mix_percent if args.mixout_decay > 0.0 else args.mixout,
@@ -54,7 +55,7 @@ def manipulate_model(
                         )
                         mix_counter += 1
                     else:
-                        print('using old mixout stuff')
+                        print('old mixout stuff')
                         new_module = MixLinear(
                             module.in_features,
                             module.out_features,
