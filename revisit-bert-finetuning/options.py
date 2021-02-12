@@ -326,5 +326,11 @@ def get_parser():
         action="store_true",
         help="Split the original development set in half",
     )
+    parser.add_argument(
+        "--newmixout",
+        type=int,
+        default=1,
+        help="use new mixout",
+    )
 
     return parser

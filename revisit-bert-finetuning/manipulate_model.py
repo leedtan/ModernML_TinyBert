@@ -42,7 +42,7 @@ def manipulate_model(
                     mix_percent = (
                         mix_depth * args.mixout + (1 - mix_depth) * args.mixout_decay
                     )
-                    if 1:
+                    if args.newmixout:
                         new_module = mixout_layer(
                             module,
                             mix_percent if args.mixout_decay > 0.0 else args.mixout,
