@@ -54,6 +54,7 @@ def manipulate_model(
                         )
                         mix_counter += 1
                     else:
+                        print('using old mixout stuff')
                         new_module = MixLinear(
                             module.in_features,
                             module.out_features,
