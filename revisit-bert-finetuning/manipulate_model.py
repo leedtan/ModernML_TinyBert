@@ -22,6 +22,7 @@ def manipulate_model(
 ):
     layer_itr = 0
     mix_counter = 0
+    print('aaaaaa')
     for sup_module in list(model.modules()):
         for name, module in sup_module.named_children():
             if isinstance(module, nn.Linear):
@@ -34,6 +35,7 @@ def manipulate_model(
                     for param in module.parameters():
                         param.requires_grad = False
                 # Mixout
+                print('bbbbbbb')
                 if layer_itr >= first_mixout_index and layer_itr < first_finetune_index:
                     target_state_dict = module.state_dict()
                     bias = True if module.bias is not None else False
@@ -42,6 +44,7 @@ def manipulate_model(
                     mix_percent = (
                         mix_depth * args.mixout + (1 - mix_depth) * args.mixout_decay
                     )
+                    print('ccccccc')
                     if args.newmixout:
                         print('using new mixout')
                         new_module = mixout_layer(

@@ -15,10 +15,6 @@ from glue_utils import (
 )
 from validate import evaluate
 
-try:
-    pass
-except ImportError:
-    pass
 
 from prior_wd_optim import PriorWD
 
