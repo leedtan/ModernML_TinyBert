@@ -3,8 +3,7 @@ import os
 
 import torch
 import torch.nn as nn
-from transformers import (AutoConfig, AutoModelForSequenceClassification,
-                          AutoTokenizer)
+from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
 from transformers import glue_output_modes as output_modes
 from transformers import glue_processors as processors
 
@@ -201,8 +200,10 @@ def main(args):
             )
 
         elif args.model_type == "xlnet":
-            from transformers.modeling_xlnet import (XLNetLayerNorm,
-                                                     XLNetRelativeAttention)
+            from transformers.modeling_xlnet import (
+                XLNetLayerNorm,
+                XLNetRelativeAttention,
+            )
 
             for layer in model.transformer.layer[-args.reinit_layers :]:
                 for module in layer.modules():

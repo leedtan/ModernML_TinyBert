@@ -40,7 +40,7 @@ def get_parser():
     )
     parser.add_argument(
         "--task_name",
-        default=None,
+        default="DEFAULT",
         type=str,
         required=True,
         help="The name of the task to train selected in the list: "
