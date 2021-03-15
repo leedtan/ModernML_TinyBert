@@ -1,5 +1,6 @@
 import logging
 import os
+import pdb
 
 import torch
 import torch.nn as nn
@@ -82,6 +83,7 @@ def main(args):
 
     args.task_name = args.task_name.lower()
     if args.task_name not in processors:
+        pdb.set_trace()
         raise ValueError("Task not found: %s" % (args.task_name))
     processor = processors[args.task_name]()
     args.output_mode = output_modes[args.task_name]
