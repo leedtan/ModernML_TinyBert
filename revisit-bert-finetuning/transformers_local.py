@@ -19,8 +19,12 @@ import logging
 import os
 import pdb
 
-from ...file_utils import is_tf_available
-from .utils import DataProcessor, InputExample, InputFeatures
+from transformers.data.processors.utils import (
+    DataProcessor,
+    InputExample,
+    InputFeatures,
+)
+from transformers.file_utils import is_tf_available
 
 if is_tf_available():
     import tensorflow as tf
