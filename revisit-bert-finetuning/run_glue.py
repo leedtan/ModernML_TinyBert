@@ -5,13 +5,13 @@ import torch
 import torch.nn as nn
 from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
 from transformers import glue_output_modes as output_modes
-from transformers import glue_processors as processors
 
 from glue_utils import load_and_cache_examples, set_seed
 from manipulate_model import manipulate_model
 from model_utils import ElectraForSequenceClassification
 from options import get_parser
 from train import run_train
+from transformers_local import glue_processors as processors
 
 try:
     pass
