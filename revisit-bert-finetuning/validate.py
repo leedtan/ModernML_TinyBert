@@ -13,7 +13,6 @@ except ImportError:
     pass
 
 
-
 def evaluate(args, model, tokenizer, prefix="", eval_datasets=None, logger=None):
     eval_task_names = [args.task_name]
     eval_outputs_dirs = [args.output_dir]
@@ -68,7 +67,9 @@ def evaluate(args, model, tokenizer, prefix="", eval_datasets=None, logger=None)
                     )  # XLM, DistilBERT, RoBERTa, and XLM-RoBERTa don't use segment_ids
                 outputs = model(**inputs)
                 tmp_eval_loss, logits = outputs[:2]
+                import pdb
 
+                pdb.set_trace()
                 eval_loss += tmp_eval_loss.mean().item()
 
             nb_eval_steps += 1
