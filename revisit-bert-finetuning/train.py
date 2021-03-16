@@ -8,8 +8,11 @@ from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
 from transformers import AdamW, get_linear_schedule_with_warmup
 
-from glue_utils import (get_optimizer_grouped_parameters,
-                        load_and_cache_examples, set_seed)
+from glue_utils import (
+    get_optimizer_grouped_parameters,
+    load_and_cache_examples,
+    set_seed,
+)
 from prior_wd_optim import PriorWD
 from validate import evaluate
 
@@ -434,7 +437,7 @@ def run_train(args, train_dataset, model, tokenizer, logger):
         args, model, tokenizer, eval_datasets=eval_datasets, logger=logger
     )
     result["step"] = t_total
-    print('test last log keys', results.keys())
+    print("test last log keys", results.keys())
     with open(f"{args.output_dir}/test_last_log.txt", "w") as f:
         f.write(",".join(["test_" + k for k in result.keys()]) + "\n")
         f.write(",".join([f"{v:.4f}" for v in result.values()]))
@@ -456,7 +459,7 @@ def run_train(args, train_dataset, model, tokenizer, logger):
         args, model, tokenizer, eval_datasets=eval_datasets, logger=logger
     )
     result["step"] = t_total
-    with open(f"{args.output_dir}/test_best_log.txt", "w") as f:
+    with open(f"{args.output_dir}/test_last_log.txt", "w") as f:
         f.write(",".join(["test_" + k for k in result.keys()]) + "\n")
         f.write(",".join([f"{v:.4f}" for v in result.values()]))
 
