@@ -4,8 +4,7 @@ import pdb
 
 import torch
 import torch.nn as nn
-from transformers import (AutoConfig, AutoModelForSequenceClassification,
-                          AutoTokenizer)
+from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
 
 from glue_utils import load_and_cache_examples, set_seed
 from manipulate_model import manipulate_model
@@ -209,8 +208,10 @@ def main(args):
             )
 
         elif args.model_type == "xlnet":
-            from transformers.modeling_xlnet import (XLNetLayerNorm,
-                                                     XLNetRelativeAttention)
+            from transformers.modeling_xlnet import (
+                XLNetLayerNorm,
+                XLNetRelativeAttention,
+            )
 
             for layer in model.transformer.layer[-args.reinit_layers :]:
                 for module in layer.modules():
@@ -257,6 +258,7 @@ def main(args):
         train_dataset = load_and_cache_examples(
             args, args.task_name, tokenizer, evaluate=False, logger=logger
         )
+        print("train1 size", train_dataset.tensors[0].shape)
         global_step, tr_loss, result = run_train(
             args, train_dataset, model, tokenizer, logger
         )

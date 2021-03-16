@@ -192,9 +192,7 @@ def load_and_cache_examples(args, task, tokenizer, evaluate=False, logger=None):
         all_labels = torch.tensor([f.label for f in features], dtype=torch.long)
     elif output_mode == "regression":
         all_labels = torch.tensor([f.label for f in features], dtype=torch.float)
-    import pdb
 
-    pdb.set_trace()
     dataset = TensorDataset(
         all_input_ids, all_attention_mask, all_token_type_ids, all_labels
     )

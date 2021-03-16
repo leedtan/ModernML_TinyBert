@@ -39,6 +39,7 @@ def run_train(args, train_dataset, model, tokenizer, logger):
         load_and_cache_examples(args, task, tokenizer, evaluate=True, logger=logger)
         for task in eval_task_names
     ]
+    print("eval1 size", eval_datasets[0].tensors[0].shape)
     if args.test_val_split:
         assert len(eval_datasets) == 1
         val_test_indices = []
@@ -428,6 +429,7 @@ def run_train(args, train_dataset, model, tokenizer, logger):
         load_and_cache_examples(args, task, tokenizer, evaluate=True, logger=logger)
         for task in eval_task_names
     ]
+    print("eval2 size", eval_datasets[0].tensors[0].shape)
     if args.test_val_split:
         for i, eval_dataset in enumerate(eval_datasets):
             test_indices = val_test_indices[i][1]
@@ -450,6 +452,7 @@ def run_train(args, train_dataset, model, tokenizer, logger):
         load_and_cache_examples(args, task, tokenizer, evaluate=True, logger=logger)
         for task in eval_task_names
     ]
+    print("eval3 size", eval_datasets[0].tensors[0].shape)
     if args.test_val_split:
         for i, eval_dataset in enumerate(eval_datasets):
             test_indices = val_test_indices[i][1]

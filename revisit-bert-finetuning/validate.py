@@ -25,6 +25,7 @@ def evaluate(args, model, tokenizer, prefix="", eval_datasets=None, logger=None)
             eval_dataset = load_and_cache_examples(
                 args, eval_task, tokenizer, evaluate=True, logger=logger
             )
+            print("eval4 size", eval_dataset.tensors[0].shape)
         elif isinstance(eval_datasets, list):
             eval_dataset = eval_datasets[i]
         else:
@@ -67,9 +68,6 @@ def evaluate(args, model, tokenizer, prefix="", eval_datasets=None, logger=None)
                     )  # XLM, DistilBERT, RoBERTa, and XLM-RoBERTa don't use segment_ids
                 outputs = model(**inputs)
                 tmp_eval_loss, logits = outputs[:2]
-                import pdb
-
-                pdb.set_trace()
                 eval_loss += tmp_eval_loss.mean().item()
 
             nb_eval_steps += 1
