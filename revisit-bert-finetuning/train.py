@@ -294,10 +294,8 @@ def run_train(args, train_dataset, model, tokenizer, logger):
                     t_total,
                 )
                 print("acc so far", global_step, intermediate_result["acc"])
-                import pdb
-
-                pdb.set_trace()
-                print("outputs", outputs)
+                trn_acc = (outputs[1].argmax(1) == inputs["labels"]).double().mean()
+                print("outputs", trn_acc)
                 global_step += 1
 
                 if args.local_rank in [-1, 0] and (
