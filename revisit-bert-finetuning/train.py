@@ -461,6 +461,7 @@ def run_train(args, train_dataset, model, tokenizer, logger):
     result = evaluate(
         args, model, tokenizer, eval_datasets=eval_datasets, logger=logger
     )
+    print("eval5 size", eval_datasets[0].tensors[0].shape)
     result["step"] = t_total
     with open(f"{args.output_dir}/test_last_log.txt", "w") as f:
         f.write(",".join(["test_" + k for k in result.keys()]) + "\n")
