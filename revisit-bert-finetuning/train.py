@@ -241,7 +241,7 @@ def run_train(args, train_dataset, model, tokenizer, logger):
                 loss = loss.mean()  # mean() to average on multi-gpu parallel training
             if args.gradient_accumulation_steps > 1:
                 loss = loss / args.gradient_accumulation_steps
-
+            raw_loss = loss
             l2_reg = 0
             layer_itr = 0
             total_mix_layers = args.mixout_layers * 12
@@ -295,7 +295,7 @@ def run_train(args, train_dataset, model, tokenizer, logger):
                 )
                 print("acc so far", global_step, intermediate_result["acc"])
                 trn_acc = (outputs[1].argmax(1) == inputs["labels"]).double().mean()
-                print("outputs", trn_acc)
+                print("trn acc", trn_acc, "trn loss", raw_loss)
                 global_step += 1
 
                 if args.local_rank in [-1, 0] and (
