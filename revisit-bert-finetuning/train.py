@@ -1,4 +1,5 @@
 import os
+import pdb
 from collections import defaultdict
 
 import numpy as np
@@ -296,6 +297,9 @@ def run_train(args, train_dataset, model, tokenizer, logger):
                 print("acc so far", global_step, intermediate_result["acc"])
                 trn_acc = (outputs[1].argmax(1) == inputs["labels"]).double().mean()
                 print("trn acc", trn_acc, "trn loss", raw_loss)
+                import pdb
+
+                pdb.set_trace()
                 global_step += 1
 
                 if args.local_rank in [-1, 0] and (
