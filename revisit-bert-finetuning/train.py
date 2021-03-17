@@ -62,7 +62,8 @@ def run_train(args, train_dataset, model, tokenizer, logger):
             test_indices = torch.tensor(test_indices).long()
             val_test_indices.append((val_indices, test_indices))
             eval_dataset.tensors = [t[val_indices] for t in eval_dataset.tensors]
-
+    else:
+        val_test_indices = None
     if args.max_steps > 0:
         t_total = args.max_steps
         args.num_train_epochs = (
@@ -283,7 +284,7 @@ def run_train(args, train_dataset, model, tokenizer, logger):
                 scheduler.step()  # Update learning rate schedule
                 model.zero_grad()
                 intermediate_result = eval_process(
-                    args, tokenizer, logger, eval_task_names, name
+                    args, tokenizer, logger, eval_task_names, name, val_test_indices
                 )
                 print("acc so far", global_step, intermediate_result["acc"])
                 import pdb
@@ -429,16 +430,20 @@ def run_train(args, train_dataset, model, tokenizer, logger):
     args.resplit_val = 0  # test on the original test_set
     eval_task_names = (args.task_name,)
 
-    retult = eval_process(args, tokenizer, logger, eval_task_names, "last")
+    retult = eval_process(
+        args, tokenizer, logger, eval_task_names, "last", val_test_indices
+    )
 
     if best_model is not None:
         model.load_state_dict(best_model)
-    result = eval_process(args, tokenizer, logger, eval_task_names, "best")
+    result = eval_process(
+        args, tokenizer, logger, eval_task_names, "best", val_test_indices
+    )
 
     return global_step, tr_loss / global_step, result
 
 
-def eval_process(args, tokenizer, logger, eval_task_names, name):
+def eval_process(args, tokenizer, logger, eval_task_names, name, val_test_indices):
     # test the last checkpoint on the second half
     eval_datasets = [
         load_and_cache_examples(args, task, tokenizer, evaluate=True, logger=logger)
