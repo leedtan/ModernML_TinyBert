@@ -291,6 +291,7 @@ def run_train(args, train_dataset, model, tokenizer, logger):
                     "train",
                     val_test_indices,
                     model,
+                    t_total,
                 )
                 print("acc so far", global_step, intermediate_result["acc"])
                 import pdb
@@ -437,20 +438,34 @@ def run_train(args, train_dataset, model, tokenizer, logger):
     eval_task_names = (args.task_name,)
 
     retult = eval_process(
-        args, tokenizer, logger, eval_task_names, "last", val_test_indices, model
+        args,
+        tokenizer,
+        logger,
+        eval_task_names,
+        "last",
+        val_test_indices,
+        model,
+        t_total,
     )
 
     if best_model is not None:
         model.load_state_dict(best_model)
     result = eval_process(
-        args, tokenizer, logger, eval_task_names, "best", val_test_indices, model
+        args,
+        tokenizer,
+        logger,
+        eval_task_names,
+        "best",
+        val_test_indices,
+        model,
+        t_total,
     )
 
     return global_step, tr_loss / global_step, result
 
 
 def eval_process(
-    args, tokenizer, logger, eval_task_names, name, val_test_indices, model
+    args, tokenizer, logger, eval_task_names, name, val_test_indices, model, t_total
 ):
     # test the last checkpoint on the second half
     eval_datasets = [
