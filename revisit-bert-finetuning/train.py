@@ -201,12 +201,9 @@ def run_train(args, train_dataset, model, tokenizer, logger):
     )
     set_seed(args.seed)  # Added here for reproductibility
 
-    # pretrained_model = copy.deepcopy(model)
-    # pretrained_model.eval()
     for module in list(model.modules()):
         if hasattr(module, "is_our_mixout"):
             break
-    # print(module)
     epoch_counter = 0
     for _ in train_iterator:
         epoch_iterator = tqdm(
@@ -285,6 +282,14 @@ def run_train(args, train_dataset, model, tokenizer, logger):
                 optimizer.step()
                 scheduler.step()  # Update learning rate schedule
                 model.zero_grad()
+                intermediate_result = eval_process(
+                    args, gask, tokenizer, logger, eval_task_names, name
+                )
+                print("acc so far", global_step, intermediate_result["acc"])
+                import pdb
+
+                pdb.set_trace()
+                print("outputs", outputs)
                 global_step += 1
 
                 if args.local_rank in [-1, 0] and (
@@ -424,12 +429,21 @@ def run_train(args, train_dataset, model, tokenizer, logger):
     args.resplit_val = 0  # test on the original test_set
     eval_task_names = (args.task_name,)
 
+    retult = eval_process(args, gask, tokenizer, logger, eval_task_names, "last")
+
+    if best_model is not None:
+        model.load_state_dict(best_model)
+    result = eval_process(args, gask, tokenizer, logger, eval_task_names, "best")
+
+    return global_step, tr_loss / global_step, result
+
+
+def eval_process(args, gask, tokenizer, logger, eval_task_names, name):
     # test the last checkpoint on the second half
     eval_datasets = [
         load_and_cache_examples(args, task, tokenizer, evaluate=True, logger=logger)
         for task in eval_task_names
     ]
-    print("eval2 size", eval_datasets[0].tensors[0].shape)
     if args.test_val_split:
         for i, eval_dataset in enumerate(eval_datasets):
             test_indices = val_test_indices[i][1]
@@ -439,32 +453,7 @@ def run_train(args, train_dataset, model, tokenizer, logger):
         args, model, tokenizer, eval_datasets=eval_datasets, logger=logger
     )
     result["step"] = t_total
-    print("test last log keys", results.keys())
     with open(f"{args.output_dir}/test_last_log.txt", "w") as f:
         f.write(",".join(["test_" + k for k in result.keys()]) + "\n")
         f.write(",".join([f"{v:.4f}" for v in result.values()]))
-
-    if best_model is not None:
-        model.load_state_dict(best_model)
-
-    # test on the second half
-    eval_datasets = [
-        load_and_cache_examples(args, task, tokenizer, evaluate=True, logger=logger)
-        for task in eval_task_names
-    ]
-    print("eval3 size", eval_datasets[0].tensors[0].shape)
-    if args.test_val_split:
-        for i, eval_dataset in enumerate(eval_datasets):
-            test_indices = val_test_indices[i][1]
-            eval_dataset.tensors = [t[test_indices] for t in eval_dataset.tensors]
-
-    result = evaluate(
-        args, model, tokenizer, eval_datasets=eval_datasets, logger=logger
-    )
-    print("eval5 size", eval_datasets[0].tensors[0].shape)
-    result["step"] = t_total
-    with open(f"{args.output_dir}/test_last_log.txt", "w") as f:
-        f.write(",".join(["test_" + k for k in result.keys()]) + "\n")
-        f.write(",".join([f"{v:.4f}" for v in result.values()]))
-
-    return global_step, tr_loss / global_step, result
+    return result
