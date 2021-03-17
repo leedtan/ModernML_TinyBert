@@ -284,21 +284,26 @@ def run_train(args, train_dataset, model, tokenizer, logger):
                 optimizer.step()
                 scheduler.step()  # Update learning rate schedule
                 model.zero_grad()
-                intermediate_result = eval_process(
-                    args,
-                    tokenizer,
-                    logger,
-                    eval_task_names,
-                    "train",
-                    val_test_indices,
-                    model,
-                    t_total,
-                )
-                print("acc so far", global_step, intermediate_result["acc"])
-                trn_acc = (outputs[1].argmax(1) == inputs["labels"]).double().mean()
-                trn_acc = trn_acc.cpu().detach().numpy().tolist()
-                raw_loss = raw_loss.cpu().detach().numpy().tolist()
-                print("trn acc", trn_acc, "trn loss", raw_loss)
+                if global_step % 100 == 0:
+                    intermediate_result = eval_process(
+                        args,
+                        tokenizer,
+                        logger,
+                        eval_task_names,
+                        "train",
+                        val_test_indices,
+                        model,
+                        t_total,
+                    )
+                    print("")
+                    print("")
+                    print("acc so far", global_step, intermediate_result["acc"])
+                    trn_acc = (outputs[1].argmax(1) == inputs["labels"]).double().mean()
+                    trn_acc = trn_acc.cpu().detach().numpy().tolist()
+                    raw_loss = raw_loss.cpu().detach().numpy().tolist()
+                    print("trn acc", trn_acc, "trn loss", raw_loss)
+                    print("")
+                    print("")
                 global_step += 1
 
                 if args.local_rank in [-1, 0] and (
