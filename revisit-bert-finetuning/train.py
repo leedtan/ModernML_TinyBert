@@ -453,7 +453,7 @@ def eval_process(args, gask, tokenizer, logger, eval_task_names, name):
         args, model, tokenizer, eval_datasets=eval_datasets, logger=logger
     )
     result["step"] = t_total
-    with open(f"{args.output_dir}/test_last_log.txt", "w") as f:
+    with open(f"{args.output_dir}/test_{name}_log.txt", "w") as f:
         f.write(",".join(["test_" + k for k in result.keys()]) + "\n")
         f.write(",".join([f"{v:.4f}" for v in result.values()]))
     return result
