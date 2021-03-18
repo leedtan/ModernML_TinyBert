@@ -295,6 +295,8 @@ def run_train(args, train_dataset, model, tokenizer, logger):
                         model,
                         t_total,
                     )
+
+                    pdb.set_trace()
                     print("")
                     print("")
                     print("acc so far", global_step, intermediate_result["acc"])

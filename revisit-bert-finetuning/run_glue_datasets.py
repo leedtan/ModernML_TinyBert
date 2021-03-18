@@ -10,7 +10,7 @@ data_dir = args.data_dir
 
 
 DATASETS = ["RTE", "MRPC", "CoLA", "STS-B"]
-DATASETS = ["hans", "RTE", "MRPC", "STS-B"]
+DATASETS = ["mnlihans", "hans", "RTE", "MRPC", "STS-B"]
 
 
 def experiment(seeds):
