@@ -295,8 +295,6 @@ def run_train(args, train_dataset, model, tokenizer, logger):
                         model,
                         t_total,
                     )
-
-                    pdb.set_trace()
                     print("")
                     print("")
                     print("acc so far", global_step, intermediate_result["acc"])
@@ -484,7 +482,6 @@ def eval_process(
         for i, eval_dataset in enumerate(eval_datasets):
             test_indices = val_test_indices[i][1]
             eval_dataset.tensors = [t[test_indices] for t in eval_dataset.tensors]
-    pdb.set_trace()
     result = evaluate(
         args, model, tokenizer, eval_datasets=eval_datasets, logger=logger
     )
