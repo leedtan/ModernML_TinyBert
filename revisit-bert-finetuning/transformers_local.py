@@ -311,7 +311,7 @@ class MnliHansProcessor(DataProcessor):
 
     def get_labels(self):
         """See base class."""
-        return ["contradiction", "entailment", "neutral"]
+        return ["entailment", "non-entailment"]
 
     def _create_examples(self, lines, set_type):
         """Creates examples for the training and dev sets."""
@@ -714,6 +714,7 @@ glue_processors = {
     "rte": RteProcessor,
     "wnli": WnliProcessor,
     "hans": HansProcessor,
+    "MnliHans": MnliHansProcessor,
 }
 
 glue_output_modes = {
@@ -728,4 +729,5 @@ glue_output_modes = {
     "rte": "classification",
     "wnli": "classification",
     "hans": "classification",
+    "MnliHans": "classification",
 }
