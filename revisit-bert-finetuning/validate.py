@@ -85,6 +85,8 @@ def evaluate(args, model, tokenizer, prefix="", eval_datasets=None, logger=None)
             preds = np.argmax(preds, axis=1)
         elif args.output_mode == "regression":
             preds = np.squeeze(preds)
+        if eval_task == "mnlihans":
+            eval_task = "hans"
         result = compute_metrics(eval_task, preds, out_label_ids)
         results.update(result)
 
