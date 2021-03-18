@@ -285,7 +285,7 @@ class MnliProcessor(DataProcessor):
         return examples
 
 
-class MnliHansProcessor(DataProcessor):
+class mnlihansProcessor(DataProcessor):
     """Processor for the MultiNLI data set (GLUE version)."""
 
     def get_example_from_tensor_dict(self, tensor_dict):
@@ -714,7 +714,7 @@ glue_processors = {
     "rte": RteProcessor,
     "wnli": WnliProcessor,
     "hans": HansProcessor,
-    "mnlihans": MnliHansProcessor,
+    "mnlihans": mnlihansProcessor,
 }
 
 glue_output_modes = {
