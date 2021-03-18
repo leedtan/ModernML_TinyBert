@@ -19,11 +19,8 @@ import logging
 import os
 import pdb
 
-from transformers.data.processors.utils import (
-    DataProcessor,
-    InputExample,
-    InputFeatures,
-)
+from transformers.data.processors.utils import (DataProcessor, InputExample,
+                                                InputFeatures)
 from transformers.file_utils import is_tf_available
 
 if is_tf_available():
@@ -714,7 +711,7 @@ glue_processors = {
     "rte": RteProcessor,
     "wnli": WnliProcessor,
     "hans": HansProcessor,
-    "MnliHans": MnliHansProcessor,
+    "mnlihans": MnliHansProcessor,
 }
 
 glue_output_modes = {
